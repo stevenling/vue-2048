@@ -19,14 +19,13 @@
         </div>
 
         <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex" v-cloak>
-          <div
-            v-for="(cell, columnIndex) in row"
-            :key="columnIndex"
-            class="number-cell"
-            :id="'number-cell-' + rowIndex + '-' + columnIndex"
-            v-cloak
-          >
-            {{ cell }}
+          <div v-for="(cell, columnIndex) in row" :key="columnIndex" v-cloak>
+            <span
+              class="number-cell"
+              :id="'number-cell-' + rowIndex + '-' + columnIndex"
+              v-show="shouldShowCell(rowIndex, columnIndex)"
+              >{{ cell }}</span
+            >
           </div>
         </div>
       </div>
@@ -74,6 +73,14 @@ onMounted(() => {
   generateOneNumber();
   generateOneNumber();
 });
+
+
+
+const shouldShowCell = (rowIndex, columnIndex) => {
+      // 在这里根据条件决定元素的可见性
+      // 这只是一个示例，你可以根据你的需求编写具体的条件
+      return chessBoard[rowIndex][columnIndex] > 0;
+    };
 
 function getPosTop(i, j) {
   return 20 + i * 120;
@@ -144,11 +151,15 @@ function showMoveAnimation(fromX, fromY, toX, toY) {
     "number-cell-" + fromX + "-" + fromY
   );
 
-  let timer = setTimeout(() => {
-    //设置延迟执行
-    numberCell.style.top = getPosTop(toX, toY) + "px";
-    numberCell.style.left = getPosLeft(toX, toX) + "px";
-  }, 160);
+  numberCell.style.top = getPosTop(toX, toY) + "px";
+  numberCell.style.left = getPosLeft(toX, toY) + "px";
+
+
+  // let timer = setTimeout(() => {
+  //   //设置延迟执行
+  //   numberCell.style.top = getPosTop(toX, toY) + "px";
+  //   numberCell.style.left = getPosLeft(toX, toY) + "px";
+  // }, 160);
 
   // numberCell.animate({
   //     top: getPosTop(tox, toy),
@@ -304,23 +315,32 @@ async function moveLeft() {
   }
 }
 
-async function afterMove() {
-  await nextTick(() => {
-    setTimeout(() => {
-      //设置延迟执行
-      updateBoardView();
-    }, 150);
-  });
+function afterMove() {
+  // nextTick(() => {
+  //   setTimeout(() => {
+  //     //设置延迟执行
+  //     updateBoardView();
+  //   }, 150);
+  // });
+  updateBoardView();
 
-  setTimeout(() => {
-    //设置延迟执行
-    generateOneNumber();
-  }, 160);
+  generateOneNumber();
 
-  setTimeout(() => {
-    //设置延迟执行
-    isGameOver();
-  }, 300);
+
+  // updateBoardView();
+
+  isGameOver();
+
+
+  // setTimeout(() => {
+  //   //设置延迟执行
+  //   generateOneNumber();
+  // }, 160);
+
+  // setTimeout(() => {
+  //   //设置延迟执行
+  //   isGameOver();
+  // }, 300);
 }
 
 async function clickKeyUp(e) {
@@ -422,7 +442,7 @@ function isChessBoardExistSpace() {
 }
 
 function getNumberColor(number) {
-  if (number <= 4) {
+  if (number <= 4 && number >= 2) {
     return "#776e65";
   }
   return "white";
@@ -432,13 +452,25 @@ function updateBoardView() {
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       let theNumberCell = document.getElementById("number-cell-" + i + "-" + j);
+      console.log(i.toString() + j.toString());
+      console.log(theNumberCell);
+
       // 不显示
       if (chessBoard[i][j] === 0) {
-        theNumberCell.style.width = "0px";
-        theNumberCell.style.height = "0px";
-        theNumberCell.style.top = getPosTop(i, j) + 50 + "px";
-        theNumberCell.style.left = getPosLeft(i, j) + 50 + "px";
-        theNumberCell.textContent = "";
+        // 'numberCell' + i  + j +'Show' = false;
+        // v-show="'numberCell' + rowIndex  + columnIndex +'Show'"
+
+        // theNumberCell.style.width = "0px";
+        // theNumberCell.style.height = "0px";
+        // theNumberCell.style.top = getPosTop(i, j) + 50 + "px";
+        // theNumberCell.style.left = getPosLeft(i, j) + 50 + "px";
+        // theNumberCell.style.backgroundColor = getNumberBackgroundColor(
+        //   0
+        // );
+        // theNumberCell.style.color = getNumberColor(0);
+        // // theNumberCell.innerText = ""; textContent
+        // theNumberCell.innerHTML = "";
+        // theNumberCell.textContent = "";
       } else {
         theNumberCell.style.width = "100px";
         theNumberCell.style.height = "100px";
@@ -586,7 +618,8 @@ function showNumberWithAnimation(i, j, randNumber) {
     let color = getNumberColor(randNumber);
 
     numberCell.style.color = color;
-    // numberCell.textContent = randNumber;
+    numberCell.textContent = randNumber;
+
     console.log(
       "随机生成 " +
         i.toString() +
