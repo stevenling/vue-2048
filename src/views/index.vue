@@ -3,9 +3,33 @@
   <div>
     <header>
       <h1>2048</h1>
-      <a id="newgamebutton">开始新游戏</a>
+      <el-button id="newgamebutton" @click="startNewGame">开始新游戏</el-button>
       <p id="score">score:{{ score }}</p>
     </header>
+
+    <el-dialog
+      v-model="centerDialogVisible"
+      title="游戏结束"
+      width="30%"
+      align-center
+    >
+      <span>你的分数：{{ score }}</span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-input
+            class="el-input-class"
+            v-model="playerName"
+            placeholder="请输入你的昵称"
+            style="margin-bottom: 20px"
+            clearable
+          />
+          <el-button @click="centerDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitScore">
+            提交到全球排行榜
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
 
     <div id="grid-container" ref="gridContainerRef">
       <div>
@@ -52,6 +76,8 @@
 import { ref, onMounted, reactive } from "vue";
 import { ElMessage } from "element-plus";
 import { nextTick } from "vue";
+import $ from "jquery";
+import { insertScoreApi } from "/src/api/score";
 
 let chessBoard: number[][] = reactive([
   [0, 0, 0, 0],
@@ -64,6 +90,10 @@ let gridContainerRef = ref(null);
 
 let score = ref(0);
 
+let centerDialogVisible = ref(false);
+
+let playerName = ref();
+
 onMounted(() => {
   document.addEventListener("keyup", clickKeyUp);
 
@@ -74,13 +104,36 @@ onMounted(() => {
   generateOneNumber();
 });
 
+async function submitScore() {
+  let scoreData = {
+    score: 0,
+    playerName: "",
+  };
+  scoreData.score = score.value;
+  scoreData.playerName = playerName.value;
+  let res = await insertScoreApi(scoreData);
+  if (res.data !== null) {
+    ElMessage.success("提交分数成功, 希望你玩的开心");
+  } else {
+    ElMessage.error("失败");
+  }
+}
 
+const startNewGame = () => {
+  // 初始化棋盘格;
+  initChessboard();
+  // 在棋盘中产生数字
+  generateOneNumber();
+  generateOneNumber();
+  score.value = 0;
+};
 
+/**
+ * 大于 0 才显示棋盘上的数字
+ */
 const shouldShowCell = (rowIndex, columnIndex) => {
-      // 在这里根据条件决定元素的可见性
-      // 这只是一个示例，你可以根据你的需求编写具体的条件
-      return chessBoard[rowIndex][columnIndex] > 0;
-    };
+  return chessBoard[rowIndex][columnIndex] > 0;
+};
 
 function getPosTop(i, j) {
   return 20 + i * 120;
@@ -151,9 +204,8 @@ function showMoveAnimation(fromX, fromY, toX, toY) {
     "number-cell-" + fromX + "-" + fromY
   );
 
-  numberCell.style.top = getPosTop(toX, toY) + "px";
-  numberCell.style.left = getPosLeft(toX, toY) + "px";
-
+  // numberCell.style.top = getPosTop(toX, toY) + "px";
+  // numberCell.style.left = getPosLeft(toX, toY) + "px";
 
   // let timer = setTimeout(() => {
   //   //设置延迟执行
@@ -161,10 +213,13 @@ function showMoveAnimation(fromX, fromY, toX, toY) {
   //   numberCell.style.left = getPosLeft(toX, toY) + "px";
   // }, 160);
 
-  // numberCell.animate({
-  //     top: getPosTop(tox, toy),
-  //     left: getPosLeft(tox, toy)
-  // }, 200);
+  numberCell.animate(
+    {
+      top: getPosTop(toX, toY) + "px",
+      left: getPosLeft(toX, toY) + "px",
+    },
+    50
+  );
 }
 
 async function moveRight() {
@@ -316,33 +371,31 @@ async function moveLeft() {
 }
 
 function afterMove() {
-  // nextTick(() => {
-  //   setTimeout(() => {
-  //     //设置延迟执行
-  //     updateBoardView();
-  //   }, 150);
-  // });
+  // 延时会有残影
+  // setTimeout(() => {
+  //   //设置延迟执行
+  //   updateBoardView();
+  // }, 150);
   updateBoardView();
 
-  generateOneNumber();
+  // generateOneNumber();
 
+  // isGameOver();
 
-  // updateBoardView();
+  setTimeout(() => {
+    //设置延迟执行
+    generateOneNumber();
+  }, 160);
 
-  isGameOver();
-
-
-  // setTimeout(() => {
-  //   //设置延迟执行
-  //   generateOneNumber();
-  // }, 160);
-
-  // setTimeout(() => {
-  //   //设置延迟执行
-  //   isGameOver();
-  // }, 300);
+  setTimeout(() => {
+    //设置延迟执行
+    isGameOver();
+  }, 300);
 }
 
+/**
+ * 点击上下左右按键
+ */
 async function clickKeyUp(e) {
   await nextTick(() => {
     var keyCode = window.event ? e.keyCode : e.which;
@@ -427,10 +480,12 @@ function getNumberBackgroundColor(number) {
   return "black";
 }
 
-//判断棋盘中还有空间吗
+/**
+ * 判断棋盘中还有空间吗
+ */
 function isChessBoardExistSpace() {
-  for (var i = 0; i < 4; i++) {
-    for (var j = 0; j < 4; j++) {
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
       // 还有空间
       if (chessBoard[i][j] == 0) {
         return false;
@@ -441,6 +496,9 @@ function isChessBoardExistSpace() {
   return true;
 }
 
+/**
+ * 获取数字颜色
+ */
 function getNumberColor(number) {
   if (number <= 4 && number >= 2) {
     return "#776e65";
@@ -448,35 +506,19 @@ function getNumberColor(number) {
   return "white";
 }
 
+/**
+ * 重绘界面
+ */
 function updateBoardView() {
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       let theNumberCell = document.getElementById("number-cell-" + i + "-" + j);
-      console.log(i.toString() + j.toString());
-      console.log(theNumberCell);
 
-      // 不显示
-      if (chessBoard[i][j] === 0) {
-        // 'numberCell' + i  + j +'Show' = false;
-        // v-show="'numberCell' + rowIndex  + columnIndex +'Show'"
-
-        // theNumberCell.style.width = "0px";
-        // theNumberCell.style.height = "0px";
-        // theNumberCell.style.top = getPosTop(i, j) + 50 + "px";
-        // theNumberCell.style.left = getPosLeft(i, j) + 50 + "px";
-        // theNumberCell.style.backgroundColor = getNumberBackgroundColor(
-        //   0
-        // );
-        // theNumberCell.style.color = getNumberColor(0);
-        // // theNumberCell.innerText = ""; textContent
-        // theNumberCell.innerHTML = "";
-        // theNumberCell.textContent = "";
-      } else {
+      if (chessBoard[i][j] !== 0) {
         theNumberCell.style.width = "100px";
         theNumberCell.style.height = "100px";
         theNumberCell.style.top = getPosTop(i, j) + "px";
         theNumberCell.style.left = getPosLeft(i, j) + "px";
-        // theNumberCell.textContent = chessBoard[i][j];
         theNumberCell.style.backgroundColor = getNumberBackgroundColor(
           chessBoard[i][j]
         );
@@ -485,8 +527,6 @@ function updateBoardView() {
     }
   }
 }
-
-// reactive();
 
 /**
  * 初始化棋盘
@@ -502,7 +542,6 @@ function initChessboard() {
   }
 
   for (let i = 0; i < 4; i++) {
-    // chessBoard[i] = new Array();
     for (let j = 0; j < 4; j++) {
       chessBoard[i][j] = 0;
     }
@@ -521,6 +560,8 @@ function noMove() {
   if (canMoveDown() || canMoveLeft() || canMoveRight() || canMoveTop()) {
     return false;
   }
+
+  // 无法移动
   return true;
 }
 
@@ -545,8 +586,12 @@ function canMoveLeft() {
   return false;
 }
 
+/**
+ * 判断是否能向右移动
+ *
+ * @return 可以返回 true 不能返回 false
+ */
 function canMoveRight() {
-  //判断是否能向右移动 可以返回true 不能 返回false
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 3; j++) {
       if (chessBoard[i][j] != 0) {
@@ -554,14 +599,18 @@ function canMoveRight() {
           chessBoard[i][j + 1] == 0 ||
           chessBoard[i][j] == chessBoard[i][j + 1]
         )
-          return true; //可以向右移动
+          // 可以向右移动
+          return true;
       }
     }
   }
   return false; //不能向右移动
 }
+
+/**
+ * 判断是否能向下移动 可以返回true 不能 返回false
+ */
 function canMoveDown() {
-  //判断是否能向下移动 可以返回true 不能 返回false
   for (let i = 0; i < 3; i++) {
     for (let j = 0; j < 4; j++) {
       if (chessBoard[i][j] != 0) {
@@ -594,9 +643,11 @@ function noSpace() {
 /**
  * 判断游戏是否结束
  */
-function isGameOver() {
+async function isGameOver() {
   if (noSpace() && noMove()) {
     ElMessage.error("游戏结束");
+
+    centerDialogVisible.value = true;
   }
 }
 
@@ -606,42 +657,32 @@ function isGameOver() {
 function showNumberWithAnimation(i, j, randNumber) {
   let numberCell = document.getElementById("number-cell-" + i + "-" + j);
   if (numberCell !== null) {
-    // ElMessage.success("生成的值：" + chessBoard[i][j].toString());
     // 获取随机数值的背景颜色
     numberCell.style.top = getPosTop(i, j) + "px";
     numberCell.style.left = getPosLeft(i, j) + "px";
     numberCell.style.width = "100px";
     numberCell.style.height = "100px";
+
+    // numberCell.style.width = "100px";
+    // numberCell.style.height = "100px";
+    // numberCell.animate(
+    //   {
+    //     // width: "100px",
+    //     // height: "100px",
+    //     top: getPosTop(i, j) + "px",
+    //     left: getPosLeft(i, j) + "px",
+    //   },
+    //   200
+    // );
+
     let backgroundColor = getNumberBackgroundColor(randNumber);
     numberCell.style.backgroundColor = backgroundColor;
 
     let color = getNumberColor(randNumber);
 
     numberCell.style.color = color;
-    numberCell.textContent = randNumber;
 
-    console.log(
-      "随机生成 " +
-        i.toString() +
-        " " +
-        j.toString() +
-        " " +
-        "值： " +
-        randNumber.toString()
-    );
-    // const newspaperTiming = {
-    //   duration: 2000,
-    //   iterations: 1,
-    // };
-    // numberCell.animate(
-    //   {
-    //     // width: "100px",
-    //     // height: "100px",
-    //     // top: getPosTop(i, j) + "px",
-    //     // left: getPosLeft(i, j) + "px",
-    //   },
-    //   50
-    // );
+    numberCell.textContent = randNumber;
   }
 }
 
