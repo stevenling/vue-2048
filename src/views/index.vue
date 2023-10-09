@@ -111,12 +111,19 @@ async function submitScore() {
   };
   scoreData.score = score.value;
   scoreData.playerName = playerName.value;
-  let res = await insertScoreApi(scoreData);
-  if (res.data !== null) {
-    ElMessage.success("提交分数成功, 希望你玩的开心");
-  } else {
-    ElMessage.error("失败");
-  }
+
+  insertScoreApi(scoreData)
+    .then((res) => {
+      console.log(res);
+    })
+    .catch((error) => console.log(error));
+
+  // let res = await insertScoreApi(scoreData);
+  // if (res.data !== null) {
+  //   ElMessage.success("提交分数成功, 希望你玩的开心");
+  // } else {
+  //   ElMessage.error("失败");
+  // }
 }
 
 const startNewGame = () => {

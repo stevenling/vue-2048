@@ -19,7 +19,7 @@ export default defineConfig({
 
 
   ],
-  optimizeDeps: {
-    include: ['/src/http/http.js']
-  }
+  // optimizeDeps: {
+  //   include: ['/src/http/http.js']
+  // }
 })
