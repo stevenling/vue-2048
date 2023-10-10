@@ -13,7 +13,9 @@ const routes = [
   },
 ];
 
-export default createRouter({
+const index = createRouter({
   history: createWebHistory(),
   routes,
 });
+
+export default index;

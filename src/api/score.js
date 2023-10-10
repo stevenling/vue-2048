@@ -10,25 +10,18 @@ export function insertScoreApi(data) {
         url: '/2048/insertScore',
         method: 'post',
         data: data,
-        // transformRequest: [function(data) {
-        //     let ret = ''
-        //     for (let it in data) {
-        //         ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&'
-        //     }
-        //     return ret
-        // }]
     })
 }
 
-// /**
-//  * 获取排行榜
-//  */
-// export const getScoreRankApi = () => {
-//     return serviceAxios({
-//         url: '/app/getScoreRank',
-//         method: "GET",
-//     });
-// };
+/**
+ * 获取排行榜
+ */
+export const getScoreRankApi = () => {
+    return serviceAxios({
+        url: '/2048/getScoreRank',
+        method: "GET",
+    });
+};
 
 // /**
 //  * 插入分数

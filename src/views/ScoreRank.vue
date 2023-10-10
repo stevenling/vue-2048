@@ -21,6 +21,7 @@ import { ElMessage } from "element-plus";
 import { nextTick } from "vue";
 import $ from "jquery";
 import { insertScoreApi } from "/src/api/score";
+import { useRoute } from "vue-router";
 
 
 onMounted(() => {
