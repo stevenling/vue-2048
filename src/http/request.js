@@ -1,5 +1,5 @@
 import axios from 'axios'
-import {networkConfig} from '/src/config/networkConfig'
+import {networkConfig} from '/src/http/networkConfig'
 
 // 创建axios实例
 export function requestService(config) {

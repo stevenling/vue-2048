@@ -1,18 +1,18 @@
 <template>
   <!-- <div tabindex="0" @keyup.up="clickKeyUp"> -->
+  <!-- @click="showScoreRank" -->
   <div>
     <header>
       <h1>2048</h1>
       <el-button id="newgamebutton" @click="startNewGame">开始新游戏</el-button>
+      <el-button
+        >查看排行榜
+        <router-link to="/scoreRank"></router-link>
+      </el-button>
       <p id="score">score:{{ score }}</p>
     </header>
 
-    <el-dialog
-      v-model="centerDialogVisible"
-      title="游戏结束"
-      width="30%"
-      align-center
-    >
+    <el-dialog v-model="centerDialogVisible" title="游戏结束" width="30%" align-center>
       <span>你的分数：{{ score }}</span>
       <template #footer>
         <span class="dialog-footer">
@@ -24,9 +24,7 @@
             clearable
           />
           <el-button @click="centerDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitScore">
-            提交到全球排行榜
-          </el-button>
+          <el-button type="primary" @click="submitScore"> 提交到全球排行榜 </el-button>
         </span>
       </template>
     </el-dialog>
@@ -78,6 +76,7 @@ import { ElMessage } from "element-plus";
 import { nextTick } from "vue";
 import $ from "jquery";
 import { insertScoreApi } from "/src/api/score";
+import { useRoute } from "vue-router";
 
 let chessBoard: number[][] = reactive([
   [0, 0, 0, 0],
@@ -93,6 +92,7 @@ let score = ref(0);
 let centerDialogVisible = ref(false);
 
 let playerName = ref();
+const router = useRoute();
 
 onMounted(() => {
   document.addEventListener("keyup", clickKeyUp);
@@ -103,6 +103,12 @@ onMounted(() => {
   generateOneNumber();
   generateOneNumber();
 });
+
+function showScoreRank() {
+  router.push({
+    path: "/scoreRank"
+  });
+}
 
 async function submitScore() {
   let scoreData = {
@@ -159,10 +165,7 @@ function canMoveTop() {
   for (let i = 1; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       if (chessBoard[i][j] != 0) {
-        if (
-          chessBoard[i - 1][j] == 0 ||
-          chessBoard[i - 1][j] == chessBoard[i][j]
-        ) {
+        if (chessBoard[i - 1][j] == 0 || chessBoard[i - 1][j] == chessBoard[i][j]) {
           // 可以向上移动
           return true;
         }
@@ -207,9 +210,7 @@ function noBlockHor(row, col1, col2) {
  * 显示移动动画
  */
 function showMoveAnimation(fromX, fromY, toX, toY) {
-  let numberCell = document.getElementById(
-    "number-cell-" + fromX + "-" + fromY
-  );
+  let numberCell = document.getElementById("number-cell-" + fromX + "-" + fromY);
 
   // numberCell.style.top = getPosTop(toX, toY) + "px";
   // numberCell.style.left = getPosLeft(toX, toY) + "px";
@@ -245,10 +246,7 @@ async function moveRight() {
             chessBoard[i][k] = chessBoard[i][j]; //移动过去
             chessBoard[i][j] = 0; //之前的消失
             continue;
-          } else if (
-            chessBoard[i][k] == chessBoard[i][j] &&
-            noBlockHor(i, j, k)
-          ) {
+          } else if (chessBoard[i][k] == chessBoard[i][j] && noBlockHor(i, j, k)) {
             //move
             //add
             showMoveAnimation(i, j, i, k);
@@ -280,10 +278,7 @@ async function moveDown() {
             chessBoard[k][j] = chessBoard[i][j]; //移动过去
             chessBoard[i][j] = 0; //之前的消失
             continue;
-          } else if (
-            chessBoard[k][j] == chessBoard[i][j] &&
-            noBlockVer(j, i, k)
-          ) {
+          } else if (chessBoard[k][j] == chessBoard[i][j] && noBlockVer(j, i, k)) {
             //move
             //add
             showMoveAnimation(i, j, k, j);
@@ -321,10 +316,7 @@ async function moveTop() {
             // 之前的消失
             chessBoard[i][j] = 0;
             continue;
-          } else if (
-            chessBoard[k][j] === chessBoard[i][j] &&
-            noBlockVer(j, k, i)
-          ) {
+          } else if (chessBoard[k][j] === chessBoard[i][j] && noBlockVer(j, k, i)) {
             //move
             //add
             showMoveAnimation(i, j, k, j);
@@ -359,10 +351,7 @@ async function moveLeft() {
             chessBoard[i][k] = chessBoard[i][j]; //移动过去
             chessBoard[i][j] = 0; //之前的消失
             continue;
-          } else if (
-            chessBoard[i][k] == chessBoard[i][j] &&
-            noBlockHor(i, k, j)
-          ) {
+          } else if (chessBoard[i][k] == chessBoard[i][j] && noBlockHor(i, k, j)) {
             //move
             //add
             showMoveAnimation(i, j, i, k);
@@ -526,9 +515,7 @@ function updateBoardView() {
         theNumberCell.style.height = "100px";
         theNumberCell.style.top = getPosTop(i, j) + "px";
         theNumberCell.style.left = getPosLeft(i, j) + "px";
-        theNumberCell.style.backgroundColor = getNumberBackgroundColor(
-          chessBoard[i][j]
-        );
+        theNumberCell.style.backgroundColor = getNumberBackgroundColor(chessBoard[i][j]);
         theNumberCell.style.color = getNumberColor(chessBoard[i][j]);
       }
     }
@@ -581,10 +568,7 @@ function canMoveLeft() {
   for (let i = 0; i < 4; i++) {
     for (let j = 1; j < 4; j++) {
       if (chessBoard[i][j] != 0) {
-        if (
-          chessBoard[i][j - 1] == 0 ||
-          chessBoard[i][j - 1] == chessBoard[i][j]
-        )
+        if (chessBoard[i][j - 1] == 0 || chessBoard[i][j - 1] == chessBoard[i][j])
           return true; //可以向左移动
       }
     }
@@ -602,10 +586,7 @@ function canMoveRight() {
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 3; j++) {
       if (chessBoard[i][j] != 0) {
-        if (
-          chessBoard[i][j + 1] == 0 ||
-          chessBoard[i][j] == chessBoard[i][j + 1]
-        )
+        if (chessBoard[i][j + 1] == 0 || chessBoard[i][j] == chessBoard[i][j + 1])
           // 可以向右移动
           return true;
       }
@@ -621,10 +602,7 @@ function canMoveDown() {
   for (let i = 0; i < 3; i++) {
     for (let j = 0; j < 4; j++) {
       if (chessBoard[i][j] != 0) {
-        if (
-          chessBoard[i + 1][j] == 0 ||
-          chessBoard[i + 1][j] == chessBoard[i][j]
-        )
+        if (chessBoard[i + 1][j] == 0 || chessBoard[i + 1][j] == chessBoard[i][j])
           return true; //可以向下移动
       }
     }

@@ -3,6 +3,7 @@ import './style.css'
 import App from './App.vue'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+import index from './router/index.ts'
 
 // import serviceAxios from './http/http'
 
@@ -11,5 +12,5 @@ const app = createApp(App)
 // app.config.globalProperties.$axios = requestService
 
 app.use(ElementPlus)
-
+app.use(index)
 app.mount('#app')
