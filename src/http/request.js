@@ -17,13 +17,13 @@ export function requestService(config) {
         Promise.reject(error)
     })
 
-    // 响应拦截器
-    service.interceptors.response.use(res => {
-            console.log(res)
-        },
-        error => {
-            return Promise.reject(error)
-        }
-    )
+    // // 响应拦截器
+    // service.interceptors.response.use(res => {
+    //         // console.log(res)
+    //     },
+    //     error => {
+    //         return Promise.reject(error)
+    //     }
+    // )
     return service(config)
 }

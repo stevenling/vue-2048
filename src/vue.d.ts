@@ -4,4 +4,3 @@ declare module "*.vue" {
 }
 
 declare module '@/api/score.js'
-declare module '@/http/http.js'

@@ -1,21 +1,18 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHashHistory, RouterOptions, Router, RouteRecordRaw } from 'vue-router'
 
-const routes = [
-  {
-    path: "/",
-    name: "app",
-    component: () => import("../views/index.vue"),
-  },
-  {
-    path: "/scoreRank",
-    name: "ScoreRank",
-    component: () => import("../views/ScoreRank.vue"),
-  },
-];
+const routes: RouteRecordRaw[] = [
+  { path: '/', name: 'Home', component: () => import('../views/index.vue') },
+  { path: '/scoreRank', name: 'ScoreRank', component: () => import('../views/ScoreRank.vue') },
+ ]
 
-const index = createRouter({
-  history: createWebHistory(),
+
+ // RouterOptions是路由选项类型
+const options: RouterOptions = {
+  history: createWebHashHistory(),
   routes,
-});
-
-export default index;
+ }
+ 
+ // Router是路由对象类型
+ const router: Router = createRouter(options)
+ 
+ export default router

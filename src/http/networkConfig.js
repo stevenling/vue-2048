@@ -1,4 +1,4 @@
 export const networkConfig = {
-    serverUrl: 'http://127.0.0.1:8090',
+    serverUrl: 'http://yunhu.wiki:2048/api',
     requestTimeout: 20000
 }

@@ -1,8 +1,4 @@
-// import  serviceAxios  from "../http/http.js";
-// const  serviceAxios  = require('../http/http')
-
 import {requestService} from '/src/http/request'
-
 
 // 插入数据
 export function insertScoreApi(data) {
@@ -16,23 +12,9 @@ export function insertScoreApi(data) {
 /**
  * 获取排行榜
  */
-export const getScoreRankApi = () => {
-    return serviceAxios({
+export function getScoreRankApi() {
+    return requestService({
         url: '/2048/getScoreRank',
-        method: "GET",
-    });
-};
-
-// /**
-//  * 插入分数
-//  * 
-//  * @param {*} data 
-//  * @returns 
-//  */
-// export const insertScoreApi = (data) => {
-//     return serviceAxios({
-//         url: '/app/insertScore',
-//         method: "POST",
-//         data
-//     });
-// };
+        method: 'get',
+    })
+}
