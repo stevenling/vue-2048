@@ -9,22 +9,12 @@
       <p class="score-class" id="score">score:{{ score }}</p>
     </header>
 
-    <el-dialog
-      v-model="centerDialogVisible"
-      title="游戏结束"
-      width="30%"
-      align-center
-    >
+    <el-dialog v-model="centerDialogVisible" title="游戏结束" width="30%" align-center>
       <span>你的分数：{{ score }}</span>
       <template #footer>
         <span class="dialog-footer">
-          <el-input
-            class="el-input-class"
-            v-model="playerName"
-            placeholder="请输入你的昵称"
-            style="margin-bottom: 20px"
-            clearable
-          />
+          <el-input class="el-input-class" v-model="playerName" placeholder="请输入你的昵称" style="margin-bottom: 20px"
+            clearable />
           <el-button @click="centerDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="submitScore">
             提交到全球排行榜
@@ -36,38 +26,30 @@
     <div id="grid-container" ref="gridContainerRef">
       <div>
         <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
-          <div
-            v-for="(cell, columnIndex) in row"
-            :key="columnIndex"
-            class="grid-cell"
-            :id="'grid-cell-' + rowIndex + '-' + columnIndex"
-          ></div>
+          <div v-for="(cell, columnIndex) in row" :key="columnIndex" class="grid-cell"
+            :id="'grid-cell-' + rowIndex + '-' + columnIndex"></div>
         </div>
 
         <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex" v-cloak>
           <div v-for="(cell, columnIndex) in row" :key="columnIndex" v-cloak>
-            <span
-              class="number-cell"
-              :id="'number-cell-' + rowIndex + '-' + columnIndex"
-              v-show="shouldShowCell(rowIndex, columnIndex)"
-              >{{ cell }}</span
-            >
+            <span class="number-cell" :id="'number-cell-' + rowIndex + '-' + columnIndex"
+              v-show="shouldShowCell(rowIndex, columnIndex)">{{ cell }}</span>
           </div>
         </div>
       </div>
     </div>
   </div>
-
+  <table>
+    <tr v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
+      <td v-for="(cell, columnIndex) in row" :key="columnIndex">
+        <div>
+          {{ cell }}
+        </div>
+      </td>
+    </tr>
+  </table>
   <!-- <div>
-    <table>
-      <tr v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
-        <td v-for="(cell, columnIndex) in row" :key="columnIndex">
-          <div>
-            {{ cell }}
-          </div>
-        </td>
-      </tr>
-    </table>
+
   </div> -->
 </template>
 
@@ -176,10 +158,11 @@ function getPosLeft(i, j) {
 function canMoveTop() {
   for (let i = 1; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
-      if (chessBoard[i][j] != 0) {
+      if (chessBoard[i][j] !== 0) {
+        // debugger
         if (
-          chessBoard[i - 1][j] == 0 ||
-          chessBoard[i - 1][j] == chessBoard[i][j]
+          chessBoard[i - 1][j] === 0 ||
+          chessBoard[i - 1][j] === chessBoard[i][j]
         ) {
           // 可以向上移动
           return true;
@@ -188,6 +171,11 @@ function canMoveTop() {
     }
   }
   // 不能向上移动
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      console.log(chessBoard[i][j]);
+    }
+  }
   return false;
 }
 
@@ -213,7 +201,7 @@ function noBlockVer(col, startRow, endRow) {
  * @return 存在 false, 不存在 true
  */
 function noBlockHor(row, startCol, endCol) {
-  for (var i = startCol + 1; i < endCol; i++) {
+  for (let i = startCol + 1; i < endCol; i++) {
     // 存在障碍物
     if (chessBoard[row][i] !== 0) {
       return false;
@@ -250,20 +238,18 @@ async function moveRight() {
     return false;
   }
 
+  // 对左侧三列进行处理
   for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 3; j++) {
-      if (chessBoard[i][j] != 0) {
-        for (let k = j + 1; k < 4; k++) {
-          if (chessBoard[i][k] == 0 && noBlockHor(i, j, k)) {
-            // 上侧为空
+    for (let j = 2; j >= 0; j--) {
+      if (chessBoard[i][j] !== 0) {
+        for (let k = 3; k >= j+1; k--) {
+          if (chessBoard[i][k] === 0 && noBlockHor(i, j, k)) {
             showMoveAnimation(i, j, i, k);
-            // 移动过去
             chessBoard[i][k] = chessBoard[i][j];
-            // 之前的消失
             chessBoard[i][j] = 0;
             continue;
           } else if (
-            chessBoard[i][k] == chessBoard[i][j] &&
+            chessBoard[i][k] === chessBoard[i][j] &&
             noBlockHor(i, j, k)
           ) {
             showMoveAnimation(i, j, i, k);
@@ -280,24 +266,29 @@ async function moveRight() {
   }
 }
 
+/**
+ * 向下移动
+ */
 async function moveDown() {
-  if (!canMoveDown())
-    //如果不能移动
+  if (!canMoveDown()) {
+    // 如果不能移动
     return false;
+  }
 
-  for (var i = 0; i < 3; i++) {
-    for (var j = 0; j < 4; j++) {
-      if (chessBoard[i][j] != 0) {
-        for (var k = i + 1; k < 4; k++) {
-          if (chessBoard[k][j] == 0 && noBlockVer(j, i, k)) {
-            //下侧为空
-            //move
+  // 对前三行进行判断
+  for (let i = 2; i >= 0; i--) {
+    for (let j = 0; j < 4; j++) {
+      if (chessBoard[i][j] !== 0) {
+        debugger
+        for (let k = 3; k >= i+1; k--) {
+          //下侧为空
+          if (chessBoard[k][j] === 0 && noBlockVer(j, i, k)) {
             showMoveAnimation(i, j, k, j);
             chessBoard[k][j] = chessBoard[i][j]; //移动过去
             chessBoard[i][j] = 0; //之前的消失
             continue;
           } else if (
-            chessBoard[k][j] == chessBoard[i][j] &&
+            chessBoard[k][j] === chessBoard[i][j] &&
             noBlockVer(j, i, k)
           ) {
             showMoveAnimation(i, j, k, j);
@@ -318,7 +309,7 @@ async function moveDown() {
 async function moveTop() {
   if (!canMoveTop()) {
     // 如果不能移动
-    console.log("无法移动");
+    console.log("无法向上移动");
     return false;
   }
 
@@ -389,6 +380,7 @@ async function moveLeft() {
       }
     }
   }
+  return true;
 }
 
 /**
@@ -416,7 +408,7 @@ function afterMove() {
  */
 function clickKeyUp(e) {
   nextTick(() => {
-    var keyCode = window.event ? e.keyCode : e.which;
+    var keyCode = e.keyCode;
     // 点击上键
     if (keyCode === 38) {
       // 这里执行相应的行为动作
@@ -515,7 +507,7 @@ function isChessBoardExistSpace() {
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       // 还有空间
-      if (chessBoard[i][j] == 0) {
+      if (chessBoard[i][j] === 0) {
         return false;
       }
     }
@@ -530,7 +522,7 @@ function updateBoardView() {
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       let theNumberCell = document.getElementById("number-cell-" + i + "-" + j);
-      if (chessBoard[i][j] !== 0) {
+      if (chessBoard[i][j] !== 0 && theNumberCell) {
         theNumberCell.style.width = "100px";
         theNumberCell.style.height = "100px";
         theNumberCell.style.top = getPosTop(i, j) + "px";
@@ -552,8 +544,10 @@ function initChessboard() {
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       let gridCell = document.getElementById("grid-cell-" + i + "-" + j);
-      gridCell.style.top = getPosTop(i, j) + "px";
-      gridCell.style.left = getPosLeft(i, j) + "px";
+      if (gridCell) {
+        gridCell.style.top = getPosTop(i, j) + "px";
+        gridCell.style.left = getPosLeft(i, j) + "px";
+      }
     }
   }
 
@@ -578,6 +572,12 @@ function noMove() {
   }
 
   // 无法移动
+  console.log("完全无法移动");
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      console.log(chessBoard[i][j]);
+    }
+  }
   return true;
 }
 
@@ -589,10 +589,10 @@ function noMove() {
 function canMoveLeft() {
   for (let i = 0; i < 4; i++) {
     for (let j = 1; j < 4; j++) {
-      if (chessBoard[i][j] != 0) {
+      if (chessBoard[i][j] !== 0) {
         if (
-          chessBoard[i][j - 1] == 0 ||
-          chessBoard[i][j - 1] == chessBoard[i][j]
+          chessBoard[i][j - 1] === 0 ||
+          chessBoard[i][j - 1] === chessBoard[i][j]
         )
           return true; //可以向左移动
       }
@@ -610,10 +610,10 @@ function canMoveLeft() {
 function canMoveRight() {
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 3; j++) {
-      if (chessBoard[i][j] != 0) {
+      if (chessBoard[i][j] !== 0) {
         if (
-          chessBoard[i][j + 1] == 0 ||
-          chessBoard[i][j] == chessBoard[i][j + 1]
+          chessBoard[i][j + 1] === 0 ||
+          chessBoard[i][j] === chessBoard[i][j + 1]
         )
           // 可以向右移动
           return true;
@@ -629,10 +629,10 @@ function canMoveRight() {
 function canMoveDown() {
   for (let i = 0; i < 3; i++) {
     for (let j = 0; j < 4; j++) {
-      if (chessBoard[i][j] != 0) {
+      if (chessBoard[i][j] !== 0) {
         if (
-          chessBoard[i + 1][j] == 0 ||
-          chessBoard[i + 1][j] == chessBoard[i][j]
+          chessBoard[i + 1][j] === 0 ||
+          chessBoard[i + 1][j] === chessBoard[i][j]
         )
           return true; //可以向下移动
       }
