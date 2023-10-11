@@ -1,6 +1,11 @@
-import {requestService} from '/src/http/request'
+import { requestService } from '/src/http/request'
 
-// 插入数据
+/**
+ * 插入分数
+ * 
+ * @param {*} data 数据 
+ * @returns 
+ */
 export function insertScoreApi(data) {
     return requestService({
         url: '/2048/insertScore',

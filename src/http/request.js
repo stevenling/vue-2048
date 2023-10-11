@@ -1,10 +1,10 @@
 import axios from 'axios'
-import {networkConfig} from '/src/http/networkConfig'
+import { networkConfig } from '/src/http/networkConfig'
 
-// 创建axios实例
+// 创建 axios 实例
 export function requestService(config) {
     const service = axios.create({
-        // axios中请求配置有baseURL选项，表示请求URL公共部分
+        // axios 中请求配置有 baseURL 选项，表示请求 URL 公共部分
         baseURL: networkConfig.serverUrl,
         // 超时
         timeout: networkConfig.requestTimeout

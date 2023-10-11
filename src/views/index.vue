@@ -76,11 +76,10 @@ import { ref, onMounted, reactive } from "vue";
 import { ElMessage } from "element-plus";
 import { nextTick } from "vue";
 import $ from "jquery";
-// import { insertScoreApi } from "/src/api/score.js";
 import { insertScoreApi } from "../api/score";
-
 import { useRoute, useRouter } from "vue-router";
 
+// 初始化格子内容
 let chessBoard: number[][] = reactive([
   [0, 0, 0, 0],
   [0, 0, 0, 0],
@@ -89,15 +88,16 @@ let chessBoard: number[][] = reactive([
 ]);
 
 let gridContainerRef = ref(null);
-
+// 分数
 let score = ref(0);
-
 let centerDialogVisible = ref(false);
-
+// 玩家昵称
 let playerName = ref();
+// 路由
 const router = useRouter();
 
 onMounted(() => {
+  // 添加键盘事件
   document.addEventListener("keyup", clickKeyUp);
 
   // 初始化棋盘格;
@@ -107,12 +107,18 @@ onMounted(() => {
   generateOneNumber();
 });
 
+/**
+ * 点击跳转到查看排行榜页面
+ */
 function showScoreRank() {
   router.push({
     path: "/scoreRank",
   });
 }
 
+/**
+ * 提交分数
+ */
 async function submitScore() {
   let scoreData = {
     score: 0,
@@ -132,9 +138,13 @@ async function submitScore() {
     });
 }
 
+/**
+ * 点击开始新游戏
+ */
 const startNewGame = () => {
   // 初始化棋盘格;
   initChessboard();
+
   // 在棋盘中产生数字
   generateOneNumber();
   generateOneNumber();
@@ -158,6 +168,8 @@ function getPosLeft(i, j) {
 
 /**
  * 判断是否能向上移动
+ * 1. 上面那个格子的值为 0，表示是空的，因此可以移动过去
+ * 2. 上面那个格子的值与当前值相同，表示可以合并，因此也可以移动过去
  *
  * @return 可以返回 true, 不能返回 false
  */
@@ -181,11 +193,12 @@ function canMoveTop() {
 
 /**
  * 判断垂直障碍物是否存在
+ * 在同一列的 startRow 和 endRow 中间只要有一个值不为 0，说明垂直方向存在障碍物
  *
  * @return 存在 false, 不存在 true
  */
-function noBlockVer(col, row1, row2) {
-  for (let i = row1 + 1; i < row2; i++) {
+function noBlockVer(col, startRow, endRow) {
+  for (let i = startRow + 1; i < endRow; i++) {
     // 存在障碍物
     if (chessBoard[i][col] !== 0) {
       return false;
@@ -199,8 +212,8 @@ function noBlockVer(col, row1, row2) {
  *
  * @return 存在 false, 不存在 true
  */
-function noBlockHor(row, col1, col2) {
-  for (var i = col1 + 1; i < col2; i++) {
+function noBlockHor(row, startCol, endCol) {
+  for (var i = startCol + 1; i < endCol; i++) {
     // 存在障碍物
     if (chessBoard[row][i] !== 0) {
       return false;
@@ -217,14 +230,6 @@ function showMoveAnimation(fromX, fromY, toX, toY) {
     "number-cell-" + fromX + "-" + fromY
   );
 
-  // numberCell.style.top = getPosTop(toX, toY) + "px";
-  // numberCell.style.left = getPosLeft(toX, toY) + "px";
-
-  // let timer = setTimeout(() => {
-  //   //设置延迟执行
-  //   numberCell.style.top = getPosTop(toX, toY) + "px";
-  //   numberCell.style.left = getPosLeft(toX, toY) + "px";
-  // }, 160);
   if (numberCell) {
     numberCell.animate(
       {
@@ -236,33 +241,37 @@ function showMoveAnimation(fromX, fromY, toX, toY) {
   }
 }
 
+/**
+ * 向右移动
+ */
 async function moveRight() {
-  if (!canMoveRight())
-    //如果不能移动
+  if (!canMoveRight()) {
+    // 如果不能向右移动
     return false;
+  }
 
-  for (var i = 0; i < 4; i++) {
-    for (var j = 0; j < 3; j++) {
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 3; j++) {
       if (chessBoard[i][j] != 0) {
-        for (var k = j + 1; k < 4; k++) {
+        for (let k = j + 1; k < 4; k++) {
           if (chessBoard[i][k] == 0 && noBlockHor(i, j, k)) {
-            //上侧为空
-            //move
+            // 上侧为空
             showMoveAnimation(i, j, i, k);
-            chessBoard[i][k] = chessBoard[i][j]; //移动过去
-            chessBoard[i][j] = 0; //之前的消失
+            // 移动过去
+            chessBoard[i][k] = chessBoard[i][j];
+            // 之前的消失
+            chessBoard[i][j] = 0;
             continue;
           } else if (
             chessBoard[i][k] == chessBoard[i][j] &&
             noBlockHor(i, j, k)
           ) {
-            //move
-            //add
             showMoveAnimation(i, j, i, k);
-            chessBoard[i][k] = 2 * chessBoard[i][j]; //移动过去
-            chessBoard[i][j] = 0; //之前的消失
+            // 移动过去，合并
+            chessBoard[i][k] = 2 * chessBoard[i][j];
+            // 之前的消失
+            chessBoard[i][j] = 0;
             score.value = score.value + chessBoard[i][k];
-
             continue;
           }
         }
@@ -291,8 +300,6 @@ async function moveDown() {
             chessBoard[k][j] == chessBoard[i][j] &&
             noBlockVer(j, i, k)
           ) {
-            //move
-            //add
             showMoveAnimation(i, j, k, j);
             chessBoard[k][j] = 2 * chessBoard[i][j]; //移动过去
             chessBoard[i][j] = 0; //之前的消失
@@ -384,6 +391,9 @@ async function moveLeft() {
   }
 }
 
+/**
+ * 移动之后的处理，更新界面，生成一个新的格子，判断游戏是否结束
+ */
 function afterMove() {
   // 延时会有残影
   // setTimeout(() => {
@@ -392,17 +402,11 @@ function afterMove() {
   // }, 150);
   updateBoardView();
 
-  // generateOneNumber();
-
-  // isGameOver();
-
   setTimeout(() => {
-    //设置延迟执行
     generateOneNumber();
   }, 160);
 
   setTimeout(() => {
-    //设置延迟执行
     isGameOver();
   }, 300);
 }
@@ -495,6 +499,16 @@ function getNumberBackgroundColor(number) {
 }
 
 /**
+ * 获取数字颜色
+ */
+function getNumberColor(number) {
+  if (number <= 4 && number >= 2) {
+    return "#776e65";
+  }
+  return "white";
+}
+
+/**
  * 判断棋盘中还有空间吗
  */
 function isChessBoardExistSpace() {
@@ -506,18 +520,7 @@ function isChessBoardExistSpace() {
       }
     }
   }
-  // ElMessage.error("没有空间了");
   return true;
-}
-
-/**
- * 获取数字颜色
- */
-function getNumberColor(number) {
-  if (number <= 4 && number >= 2) {
-    return "#776e65";
-  }
-  return "white";
 }
 
 /**
@@ -527,7 +530,6 @@ function updateBoardView() {
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       let theNumberCell = document.getElementById("number-cell-" + i + "-" + j);
-
       if (chessBoard[i][j] !== 0) {
         theNumberCell.style.width = "100px";
         theNumberCell.style.height = "100px";
@@ -567,7 +569,7 @@ function initChessboard() {
 /**
  * 判断是否可以移动
  *
- * @returns
+ * @returns false 可以移动, true 无法移动
  */
 function noMove() {
   // 只要有一个方向可以移动，就能移动
@@ -622,7 +624,7 @@ function canMoveRight() {
 }
 
 /**
- * 判断是否能向下移动 可以返回true 不能 返回false
+ * 判断是否能向下移动 可以返回 true 不能返回 false
  */
 function canMoveDown() {
   for (let i = 0; i < 3; i++) {
@@ -660,7 +662,6 @@ function noSpace() {
 async function isGameOver() {
   if (noSpace() && noMove()) {
     ElMessage.error("游戏结束");
-
     centerDialogVisible.value = true;
   }
 }
@@ -702,17 +703,16 @@ function showNumberWithAnimation(i, j, randNumber) {
 
 /**
  * 随机生成数字
+ *
  * @returns
  */
 function generateOneNumber() {
   //棋盘中还有空间就生成数字
   if (isChessBoardExistSpace()) {
-    // 没有空间返回 true
-    // ElMessage.error("没有空间可以生成格子了");
+    // 没有空间返回 false
     return false;
   }
 
-  // 随机位置
   // 随机生成 0-4 的位置不包括 4
   let randx = parseInt(Math.floor(Math.random() * 4));
   let randy = parseInt(Math.floor(Math.random() * 4));
@@ -727,18 +727,14 @@ function generateOneNumber() {
     randy = parseInt(Math.floor(Math.random() * 4));
   }
 
-  // window.alert(board[randx][randy]);
   // 随机生成 2 或 4，他们的概率相同
   var randNumber = Math.random() > 0.5 ? 2 : 4;
 
   // 在随机位置显示随机数字
   chessBoard[randx][randy] = randNumber;
-  // console.log("randNumber = ", randNumber);
 
-  // ElMessage.success(randNumber);
   // 显示动画效果
   showNumberWithAnimation(randx, randy, randNumber);
-  // return true;
 }
 </script>
 
