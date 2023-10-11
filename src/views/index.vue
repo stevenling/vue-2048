@@ -9,12 +9,22 @@
       <p class="score-class" id="score">score:{{ score }}</p>
     </header>
 
-    <el-dialog v-model="centerDialogVisible" title="游戏结束" width="30%" align-center>
+    <el-dialog
+      v-model="centerDialogVisible"
+      title="游戏结束"
+      width="30%"
+      align-center
+    >
       <span>你的分数：{{ score }}</span>
       <template #footer>
         <span class="dialog-footer">
-          <el-input class="el-input-class" v-model="playerName" placeholder="请输入你的昵称" style="margin-bottom: 20px"
-            clearable />
+          <el-input
+            class="el-input-class"
+            v-model="playerName"
+            placeholder="请输入你的昵称"
+            style="margin-bottom: 20px"
+            clearable
+          />
           <el-button @click="centerDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="submitScore">
             提交到全球排行榜
@@ -26,20 +36,29 @@
     <div id="grid-container" ref="gridContainerRef">
       <div>
         <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
-          <div v-for="(cell, columnIndex) in row" :key="columnIndex" class="grid-cell"
-            :id="'grid-cell-' + rowIndex + '-' + columnIndex"></div>
+          <div
+            v-for="(cell, columnIndex) in row"
+            :key="rowIndex + columnIndex"
+            class="grid-cell"
+            :id="'grid-cell-' + rowIndex + '-' + columnIndex"
+          ></div>
         </div>
 
-        <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex" v-cloak>
-          <div v-for="(cell, columnIndex) in row" :key="columnIndex" v-cloak>
-            <span class="number-cell" :id="'number-cell-' + rowIndex + '-' + columnIndex"
-              v-show="shouldShowCell(rowIndex, columnIndex)">{{ cell }}</span>
+        <!-- v-cloak -->
+        <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
+          <div v-for="(cell, columnIndex) in row" :key="columnIndex">
+            <span
+              class="number-cell"
+              :id="'number-cell-' + rowIndex + '-' + columnIndex"
+              v-show="shouldShowCell(rowIndex, columnIndex)"
+              v-text="cell"
+            ></span>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <table>
+  <!-- <table>
     <tr v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
       <td v-for="(cell, columnIndex) in row" :key="columnIndex">
         <div>
@@ -47,7 +66,7 @@
         </div>
       </td>
     </tr>
-  </table>
+  </table> -->
   <!-- <div>
 
   </div> -->
@@ -106,6 +125,9 @@ async function submitScore() {
     score: 0,
     playerName: "",
   };
+  if (playerName.value === "" || playerName.value === undefined) {
+    playerName.value = "匿名用户";
+  }
   scoreData.score = score.value;
   scoreData.playerName = playerName.value;
 
@@ -124,6 +146,8 @@ async function submitScore() {
  * 点击开始新游戏
  */
 const startNewGame = () => {
+  document.addEventListener("keyup", clickKeyUp);
+
   // 初始化棋盘格;
   initChessboard();
 
@@ -218,6 +242,19 @@ function showMoveAnimation(fromX, fromY, toX, toY) {
     "number-cell-" + fromX + "-" + fromY
   );
 
+  let fromTopValue = getPosTop(fromX, fromY) + "px";
+  let fromleftValue = getPosLeft(fromX, fromY) + "px";
+  // console.log(fromTopValue + " " + fromleftValue);
+
+  let topValue = getPosTop(toX, toY) + "px";
+  let leftValue = getPosLeft(toX, toY) + "px";
+
+  console.log(
+    fromTopValue + " " + fromleftValue + "->" + topValue + " " + leftValue
+  );
+
+  // 200ms 动画效果不好
+  // 50 ms 好
   if (numberCell) {
     numberCell.animate(
       {
@@ -232,7 +269,7 @@ function showMoveAnimation(fromX, fromY, toX, toY) {
 /**
  * 向右移动
  */
-async function moveRight() {
+function moveRight() {
   if (!canMoveRight()) {
     // 如果不能向右移动
     return false;
@@ -242,7 +279,7 @@ async function moveRight() {
   for (let i = 0; i < 4; i++) {
     for (let j = 2; j >= 0; j--) {
       if (chessBoard[i][j] !== 0) {
-        for (let k = 3; k >= j+1; k--) {
+        for (let k = 3; k >= j + 1; k--) {
           if (chessBoard[i][k] === 0 && noBlockHor(i, j, k)) {
             showMoveAnimation(i, j, i, k);
             chessBoard[i][k] = chessBoard[i][j];
@@ -264,12 +301,13 @@ async function moveRight() {
       }
     }
   }
+  return true;
 }
 
 /**
  * 向下移动
  */
-async function moveDown() {
+function moveDown() {
   if (!canMoveDown()) {
     // 如果不能移动
     return false;
@@ -279,8 +317,7 @@ async function moveDown() {
   for (let i = 2; i >= 0; i--) {
     for (let j = 0; j < 4; j++) {
       if (chessBoard[i][j] !== 0) {
-        debugger
-        for (let k = 3; k >= i+1; k--) {
+        for (let k = 3; k >= i + 1; k--) {
           //下侧为空
           if (chessBoard[k][j] === 0 && noBlockVer(j, i, k)) {
             showMoveAnimation(i, j, k, j);
@@ -301,14 +338,16 @@ async function moveDown() {
       }
     }
   }
+  return true;
 }
 
 /**
  * 往上移动
  */
-async function moveTop() {
+function moveTop() {
   if (!canMoveTop()) {
     // 如果不能移动
+    debugger;
     console.log("无法向上移动");
     return false;
   }
@@ -336,18 +375,19 @@ async function moveTop() {
             chessBoard[k][j] = 2 * chessBoard[i][j]; //移动过去
             chessBoard[i][j] = 0; // 之前的消失
             score.value = score.value + chessBoard[k][j];
-            continue;
+            break;
           }
         }
       }
     }
   }
+  return true;
 }
 
 /**
  * 往左移动
  */
-async function moveLeft() {
+function moveLeft() {
   // 如果不能移动
   if (!canMoveLeft()) {
     return false;
@@ -360,9 +400,9 @@ async function moveLeft() {
           if (chessBoard[i][k] == 0 && noBlockHor(i, k, j)) {
             //左侧为空
             // move
-            showMoveAnimation(i, j, i, k);
             chessBoard[i][k] = chessBoard[i][j]; //移动过去
             chessBoard[i][j] = 0; //之前的消失
+            showMoveAnimation(i, j, i, k);
             continue;
           } else if (
             chessBoard[i][k] == chessBoard[i][j] &&
@@ -407,39 +447,40 @@ function afterMove() {
  * 点击上下左右按键
  */
 function clickKeyUp(e) {
-  nextTick(() => {
-    var keyCode = e.keyCode;
-    // 点击上键
-    if (keyCode === 38) {
-      // 这里执行相应的行为动作
-      if (moveTop()) {
-        afterMove();
-      }
-      return;
+  // nextTick(() => {
+  var keyCode = e.keyCode;
+  // 点击上键
+  if (keyCode === 38) {
+    // 这里执行相应的行为动作
+    let moveTopStatus = moveTop();
+    if (moveTopStatus) {
+      afterMove();
     }
+    return;
+  }
 
-    // 点击左键
-    if (keyCode === 37) {
-      if (moveLeft()) {
-        afterMove();
-      }
-      return;
+  // 点击左键
+  if (keyCode === 37) {
+    if (moveLeft()) {
+      afterMove();
     }
+    return;
+  }
 
-    if (keyCode === 39) {
-      if (moveRight()) {
-        afterMove();
-      }
-      return;
+  if (keyCode === 39) {
+    if (moveRight()) {
+      afterMove();
     }
+    return;
+  }
 
-    if (keyCode === 40) {
-      if (moveDown()) {
-        afterMove();
-      }
-      return;
+  if (keyCode === 40) {
+    if (moveDown()) {
+      afterMove();
     }
-  });
+    return;
+  }
+  // });
 }
 
 /**
@@ -483,8 +524,11 @@ function getNumberBackgroundColor(number) {
     case 4096:
       return "#a6c";
       break;
-    case 8092:
+    case 8192:
       return "#93c";
+      break;
+    case 16384:
+      return "#aa60a6";
       break;
   }
   return "black";
@@ -527,6 +571,15 @@ function updateBoardView() {
         theNumberCell.style.height = "100px";
         theNumberCell.style.top = getPosTop(i, j) + "px";
         theNumberCell.style.left = getPosLeft(i, j) + "px";
+        if (chessBoard[i][j] >= 1024 && chessBoard[i][j] <= 10000) {
+          theNumberCell.style.fontSize = "38px";
+        } else if (chessBoard[i][j] > 10000 && chessBoard[i][j] < 100000) {
+          theNumberCell.style.fontSize = "30px";
+        } else if (chessBoard[i][j] > 100000) {
+          theNumberCell.style.fontSize = "28px";
+        } else {
+          theNumberCell.style.fontSize = "60px";
+        }
         theNumberCell.style.backgroundColor = getNumberBackgroundColor(
           chessBoard[i][j]
         );
@@ -556,6 +609,7 @@ function initChessboard() {
       chessBoard[i][j] = 0;
     }
   }
+  // chessBoard[0][0] = 2048;
   updateBoardView();
   score.value = 0;
 }
@@ -570,6 +624,7 @@ function noMove() {
   if (canMoveDown() || canMoveLeft() || canMoveRight() || canMoveTop()) {
     return false;
   }
+  debugger;
 
   // 无法移动
   console.log("完全无法移动");
@@ -663,6 +718,12 @@ async function isGameOver() {
   if (noSpace() && noMove()) {
     ElMessage.error("游戏结束");
     centerDialogVisible.value = true;
+    document.removeEventListener("keyup", clickKeyUp);
+    // for (let i = 0; i < 4; i++) {
+    //   for (let j = 0; j < 4; j++) {
+    //     chessBoard[i][j] = 0;
+    //   }
+    // }
   }
 }
 
@@ -671,24 +732,12 @@ async function isGameOver() {
  */
 function showNumberWithAnimation(i, j, randNumber) {
   let numberCell = document.getElementById("number-cell-" + i + "-" + j);
-  if (numberCell !== null) {
+  if (numberCell) {
     // 获取随机数值的背景颜色
     numberCell.style.top = getPosTop(i, j) + "px";
     numberCell.style.left = getPosLeft(i, j) + "px";
-    numberCell.style.width = "100px";
-    numberCell.style.height = "100px";
-
     // numberCell.style.width = "100px";
     // numberCell.style.height = "100px";
-    // numberCell.animate(
-    //   {
-    //     // width: "100px",
-    //     // height: "100px",
-    //     top: getPosTop(i, j) + "px",
-    //     left: getPosLeft(i, j) + "px",
-    //   },
-    //   200
-    // );
 
     let backgroundColor = getNumberBackgroundColor(randNumber);
     numberCell.style.backgroundColor = backgroundColor;
@@ -697,6 +746,17 @@ function showNumberWithAnimation(i, j, randNumber) {
 
     numberCell.style.color = color;
 
+    // numberCell.animate(
+    //   {
+    //     // width: "100px",
+    //     // height: "100px",
+    //     top: getPosTop(i, j) + "px",
+    //     left: getPosLeft(i, j) + "px",
+    //   },
+    //   150
+    // );
+    numberCell.style.width = "100px";
+    numberCell.style.height = "100px";
     numberCell.textContent = randNumber;
   }
 }
