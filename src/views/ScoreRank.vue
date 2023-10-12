@@ -7,10 +7,10 @@
         :data="scoreRankData"
         stripe
         height="800"
-        style="width: 60%"
+        style="width: 80%"
         :row-class-name="tableRowClassName"
       >
-        <el-table-column type="index" label="排名" width="100px" />
+        <el-table-column type="index" label="排名" width="80px" />
         <el-table-column prop="createTime" label="记录日期" />
         <el-table-column prop="name" label="玩家昵称" />
         <el-table-column prop="score" label="分数" />

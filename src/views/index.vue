@@ -7,6 +7,7 @@
       <el-button type="primary" @click="startNewGame">开始新游戏</el-button>
       <el-button type="warning" @click="showScoreRank">查看排行榜</el-button>
       <p class="score-class" id="score">score:{{ score }}</p>
+      <div class="use-time-class">用时：{{ useTime }} 秒</div>
     </header>
 
     <el-dialog
@@ -16,6 +17,7 @@
       align-center
     >
       <span>你的分数：{{ score }}</span>
+      <span> 用时：{{ useTime }} 秒</span>
       <template #footer>
         <span class="dialog-footer">
           <el-input
@@ -94,6 +96,7 @@ let centerDialogVisible = ref(false);
 let playerName = ref();
 // 路由
 const router = useRouter();
+let useTime = ref(0);
 
 onMounted(() => {
   // 添加键盘事件
@@ -101,9 +104,12 @@ onMounted(() => {
 
   // 初始化棋盘格;
   initChessboard();
+  // setInterval(() => useTime.value++, 1000);
+  useTime.value = 0;
+
   // 在棋盘中产生数字
-  generateOneNumber();
-  generateOneNumber();
+  // generateOneNumber();
+  // generateOneNumber();
 });
 
 /**
@@ -140,13 +146,17 @@ async function submitScore() {
     });
 }
 
+let timer = ref();
+
 /**
  * 点击开始新游戏
  */
 const startNewGame = () => {
   document.addEventListener("keyup", processKeyUp);
-
+  useTime.value = 0;
+  timer.value = setInterval(() => useTime.value++, 1000);
   score.value = 0;
+  useTime.value = 0;
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       chessBoard[i][j] = 0;
@@ -245,16 +255,16 @@ function showMoveAnimation(fromX, fromY, toX, toY) {
     "number-cell-" + fromX + "-" + fromY
   );
 
-  let fromTopValue = getPosTop(fromX, fromY) + "px";
-  let fromleftValue = getPosLeft(fromX, fromY) + "px";
+  // let fromTopValue = getPosTop(fromX, fromY) + "px";
+  // let fromleftValue = getPosLeft(fromX, fromY) + "px";
   // console.log(fromTopValue + " " + fromleftValue);
 
   let topValue = getPosTop(toX, toY) + "px";
   let leftValue = getPosLeft(toX, toY) + "px";
 
-  console.log(
-    fromTopValue + " " + fromleftValue + "->" + topValue + " " + leftValue
-  );
+  // console.log(
+  //   fromTopValue + " " + fromleftValue + "->" + topValue + " " + leftValue
+  // );
 
   // 200ms 动画效果不好
   // 50 ms 好
@@ -278,26 +288,36 @@ function moveRight() {
     return false;
   }
 
+  let canMoveRightColumnIndex = [3, 3, 3, 3];
+
   // 对左侧三列进行处理
-  for (let i = 0; i < 4; i++) {
-    for (let j = 2; j >= 0; j--) {
-      if (chessBoard[i][j] !== 0) {
-        for (let k = 3; k >= j + 1; k--) {
-          if (chessBoard[i][k] === 0 && noBlockHor(i, j, k)) {
-            showMoveAnimation(i, j, i, k);
-            chessBoard[i][k] = chessBoard[i][j];
-            chessBoard[i][j] = 0;
+  for (let rowIndex = 0; rowIndex < 4; rowIndex++) {
+    for (let columnIndex = 2; columnIndex >= 0; columnIndex--) {
+      if (chessBoard[rowIndex][columnIndex] !== 0) {
+        for (
+          let k = canMoveRightColumnIndex[rowIndex];
+          k >= columnIndex + 1;
+          k--
+        ) {
+          if (
+            chessBoard[rowIndex][k] === 0 &&
+            noBlockHor(rowIndex, columnIndex, k)
+          ) {
+            showMoveAnimation(rowIndex, columnIndex, rowIndex, k);
+            chessBoard[rowIndex][k] = chessBoard[rowIndex][columnIndex];
+            chessBoard[rowIndex][columnIndex] = 0;
             continue;
           } else if (
-            chessBoard[i][k] === chessBoard[i][j] &&
-            noBlockHor(i, j, k)
+            chessBoard[rowIndex][k] === chessBoard[rowIndex][columnIndex] &&
+            noBlockHor(rowIndex, columnIndex, k)
           ) {
-            showMoveAnimation(i, j, i, k);
+            showMoveAnimation(rowIndex, columnIndex, rowIndex, k);
             // 移动过去，合并
-            chessBoard[i][k] = 2 * chessBoard[i][j];
+            chessBoard[rowIndex][k] = 2 * chessBoard[rowIndex][columnIndex];
             // 之前的消失
-            chessBoard[i][j] = 0;
-            score.value = score.value + chessBoard[i][k];
+            chessBoard[rowIndex][columnIndex] = 0;
+            score.value = score.value + chessBoard[rowIndex][k];
+            canMoveRightColumnIndex[rowIndex] = k - 1;
             continue;
           }
         }
@@ -316,25 +336,31 @@ function moveDown() {
     return false;
   }
 
+  let canMoveDownRowIndex = [3, 3, 3, 3];
+
   // 对前三行进行判断
-  for (let i = 2; i >= 0; i--) {
-    for (let j = 0; j < 4; j++) {
-      if (chessBoard[i][j] !== 0) {
-        for (let k = 3; k >= i + 1; k--) {
+  for (let rowIndex = 2; rowIndex >= 0; rowIndex--) {
+    for (let columnIndex = 0; columnIndex < 4; columnIndex++) {
+      if (chessBoard[rowIndex][columnIndex] !== 0) {
+        for (let k = canMoveDownRowIndex[columnIndex]; k >= rowIndex + 1; k--) {
           //下侧为空
-          if (chessBoard[k][j] === 0 && noBlockVer(j, i, k)) {
-            showMoveAnimation(i, j, k, j);
-            chessBoard[k][j] = chessBoard[i][j]; //移动过去
-            chessBoard[i][j] = 0; //之前的消失
+          if (
+            chessBoard[k][columnIndex] === 0 &&
+            noBlockVer(columnIndex, rowIndex, k)
+          ) {
+            showMoveAnimation(rowIndex, columnIndex, k, columnIndex);
+            chessBoard[k][columnIndex] = chessBoard[rowIndex][columnIndex]; //移动过去
+            chessBoard[rowIndex][columnIndex] = 0; //之前的消失
             continue;
           } else if (
-            chessBoard[k][j] === chessBoard[i][j] &&
-            noBlockVer(j, i, k)
+            chessBoard[k][columnIndex] === chessBoard[rowIndex][columnIndex] &&
+            noBlockVer(columnIndex, rowIndex, k)
           ) {
-            showMoveAnimation(i, j, k, j);
-            chessBoard[k][j] = 2 * chessBoard[i][j]; //移动过去
-            chessBoard[i][j] = 0; //之前的消失
-            score.value = score.value + chessBoard[k][j];
+            showMoveAnimation(rowIndex, columnIndex, k, columnIndex);
+            chessBoard[k][columnIndex] = 2 * chessBoard[rowIndex][columnIndex]; //移动过去
+            chessBoard[rowIndex][columnIndex] = 0; //之前的消失
+            score.value = score.value + chessBoard[k][columnIndex];
+            canMoveDownRowIndex[columnIndex] = k - 1;
             continue;
           }
         }
@@ -350,38 +376,42 @@ function moveDown() {
 function moveUp() {
   if (!canMoveTop()) {
     // 如果不能移动
-    debugger;
     console.log("无法向上移动");
     return false;
   }
 
-  for (let i = 1; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      if (chessBoard[i][j] !== 0) {
-        debugger;
-        let isMergeStatus = false;
-        for (let k = 0; k < i; k++) {
-          if (chessBoard[k][j] === 0 && noBlockVer(j, k, i)) {
+  // 每一列可以移动到最顶端的那个行
+  let canMoveTopRowIndex = [0, 0, 0, 0];
+
+  for (let rowIndex = 1; rowIndex < 4; rowIndex++) {
+    for (let columnIndex = 0; columnIndex < 4; columnIndex++) {
+      if (chessBoard[rowIndex][columnIndex] !== 0) {
+        for (let k = canMoveTopRowIndex[columnIndex]; k < rowIndex; k++) {
+          if (
+            chessBoard[k][columnIndex] === 0 &&
+            noBlockVer(columnIndex, k, rowIndex)
+          ) {
             //上侧为空，不存在障碍物
             // move
-            showMoveAnimation(i, j, k, j);
+            showMoveAnimation(rowIndex, columnIndex, k, columnIndex);
             // 移动过去
-            chessBoard[k][j] = chessBoard[i][j];
+            chessBoard[k][columnIndex] = chessBoard[rowIndex][columnIndex];
             // 之前的消失
-            chessBoard[i][j] = 0;
+            chessBoard[rowIndex][columnIndex] = 0;
             continue;
           } else if (
-            chessBoard[k][j] === chessBoard[i][j] &&
-            noBlockVer(j, k, i) &&
-            !isMergeStatus
+            chessBoard[k][columnIndex] === chessBoard[rowIndex][columnIndex] &&
+            noBlockVer(columnIndex, k, rowIndex)
           ) {
             //move
             //add
-            showMoveAnimation(i, j, k, j);
-            chessBoard[k][j] = 2 * chessBoard[i][j]; //移动过去
-            chessBoard[i][j] = 0; // 之前的消失
-            score.value = score.value + chessBoard[k][j];
-            isMergeStatus = true;
+            showMoveAnimation(rowIndex, columnIndex, k, columnIndex);
+            chessBoard[k][columnIndex] = 2 * chessBoard[rowIndex][columnIndex]; //移动过去
+            chessBoard[rowIndex][columnIndex] = 0; // 之前的消失
+            score.value = score.value + chessBoard[k][columnIndex];
+            // isMergeStatus = true;
+            // canMoveTopRowIndex = k + 1;
+            canMoveTopRowIndex[columnIndex] = k + 1;
             continue;
           }
         }
@@ -400,27 +430,36 @@ function moveLeft() {
     return false;
   }
   // debugger;
-  for (var i = 0; i < 4; i++) {
-    for (var j = 1; j < 4; j++) {
-      if (chessBoard[i][j] != 0) {
-        for (var k = 0; k < j; k++) {
-          if (chessBoard[i][k] == 0 && noBlockHor(i, k, j)) {
+
+  // 每一行能移动到最左侧的那个列数
+  let canMoveLeftColumnIndex = [0, 0, 0, 0];
+
+  for (let rowIndex = 0; rowIndex < 4; rowIndex++) {
+    // 最左侧那一列不移动
+    for (let columnIndex = 1; columnIndex < 4; columnIndex++) {
+      if (chessBoard[rowIndex][columnIndex] != 0) {
+        for (let k = canMoveLeftColumnIndex[rowIndex]; k < columnIndex; k++) {
+          if (
+            chessBoard[rowIndex][k] == 0 &&
+            noBlockHor(rowIndex, k, columnIndex)
+          ) {
             //左侧为空
             // move
-            chessBoard[i][k] = chessBoard[i][j]; //移动过去
-            chessBoard[i][j] = 0; //之前的消失
-            showMoveAnimation(i, j, i, k);
+            chessBoard[rowIndex][k] = chessBoard[rowIndex][columnIndex]; //移动过去
+            chessBoard[rowIndex][columnIndex] = 0; //之前的消失
+            showMoveAnimation(rowIndex, columnIndex, rowIndex, k);
             continue;
           } else if (
-            chessBoard[i][k] == chessBoard[i][j] &&
-            noBlockHor(i, k, j)
+            chessBoard[rowIndex][k] == chessBoard[rowIndex][columnIndex] &&
+            noBlockHor(rowIndex, k, columnIndex)
           ) {
             //move
             //add
-            showMoveAnimation(i, j, i, k);
-            chessBoard[i][k] = 2 * chessBoard[i][j]; //移动过去
-            chessBoard[i][j] = 0; //之前的消失
-            score.value = score.value + chessBoard[i][k];
+            showMoveAnimation(rowIndex, columnIndex, rowIndex, k);
+            chessBoard[rowIndex][k] = 2 * chessBoard[rowIndex][columnIndex]; //移动过去
+            chessBoard[rowIndex][columnIndex] = 0; //之前的消失
+            score.value = score.value + chessBoard[rowIndex][k];
+            canMoveLeftColumnIndex[rowIndex] = k + 1;
             continue;
           }
         }
@@ -580,6 +619,7 @@ function updateBoardView() {
         theNumberCell.style.height = "100px";
         theNumberCell.style.top = getPosTop(i, j) + "px";
         theNumberCell.style.left = getPosLeft(i, j) + "px";
+
         if (chessBoard[i][j] >= 1024 && chessBoard[i][j] <= 10000) {
           theNumberCell.style.fontSize = "38px";
         } else if (chessBoard[i][j] > 10000 && chessBoard[i][j] < 100000) {
@@ -589,6 +629,15 @@ function updateBoardView() {
         } else {
           theNumberCell.style.fontSize = "60px";
         }
+        theNumberCell.style.backgroundColor = getNumberBackgroundColor(
+          chessBoard[i][j]
+        );
+        theNumberCell.style.color = getNumberColor(chessBoard[i][j]);
+      } else if (chessBoard[i][j] === 0 && theNumberCell) {
+        theNumberCell.style.width = "0px";
+        theNumberCell.style.height = "0px";
+        theNumberCell.style.top = getPosTop(i, j) + "px";
+        theNumberCell.style.left = getPosLeft(i, j) + "px";
         theNumberCell.style.backgroundColor = getNumberBackgroundColor(
           chessBoard[i][j]
         );
@@ -632,7 +681,6 @@ function noMove() {
   if (canMoveDown() || canMoveLeft() || canMoveRight() || canMoveTop()) {
     return false;
   }
-  debugger;
 
   // 无法移动
   console.log("完全无法移动");
@@ -726,6 +774,7 @@ async function isGameOver() {
   if (noSpace() && noMove()) {
     ElMessage.error("游戏结束");
     centerDialogVisible.value = true;
+    clearInterval(timer.value);
     document.removeEventListener("keyup", processKeyUp);
     // for (let i = 0; i < 4; i++) {
     //   for (let j = 0; j < 4; j++) {
@@ -833,7 +882,7 @@ header p {
   width: 460px;
   height: 460px;
   padding: 20px;
-  margin: 30px auto;
+  margin: 15px auto;
   background-color: #bbada0;
   border-radius: 10px;
   position: relative;
@@ -859,5 +908,12 @@ header p {
 
 .score-class {
   margin-top: 20px;
+}
+
+.use-time-class {
+  width: 100px;
+  margin-top: 20px;
+  margin-left: 280px;
+  position: relative;
 }
 </style>
