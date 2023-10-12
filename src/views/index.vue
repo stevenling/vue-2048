@@ -355,11 +355,11 @@ function moveUp() {
     return false;
   }
 
-  let isMergeStatus = false;
   for (let i = 1; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       if (chessBoard[i][j] !== 0) {
         debugger;
+        let isMergeStatus = false;
         for (let k = 0; k < i; k++) {
           if (chessBoard[k][j] === 0 && noBlockVer(j, k, i)) {
             //上侧为空，不存在障碍物
@@ -382,7 +382,7 @@ function moveUp() {
             chessBoard[i][j] = 0; // 之前的消失
             score.value = score.value + chessBoard[k][j];
             isMergeStatus = true;
-            break;
+            continue;
           }
         }
       }
