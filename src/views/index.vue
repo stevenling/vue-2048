@@ -1,5 +1,5 @@
 <template>
-  <!-- <div tabindex="0" @keyup.up="clickKeyUp"> -->
+  <!-- <div tabindex="0" @keyup.up="processKeyUp"> -->
   <!-- @click="showScoreRank" -->
   <div>
     <header>
@@ -33,7 +33,7 @@
       </template>
     </el-dialog>
 
-    <div id="grid-container" ref="gridContainerRef">
+    <div id="grid-container">
       <div>
         <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
           <div
@@ -44,9 +44,8 @@
           ></div>
         </div>
 
-        <!-- v-cloak -->
         <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
-          <div v-for="(cell, columnIndex) in row" :key="columnIndex">
+          <div v-for="(cell, columnIndex) in row" :key="rowIndex + columnIndex">
             <span
               class="number-cell"
               :id="'number-cell-' + rowIndex + '-' + columnIndex"
@@ -82,13 +81,12 @@ import { useRoute, useRouter } from "vue-router";
 
 // 初始化格子内容
 let chessBoard: number[][] = reactive([
-  [0, 0, 0, 0],
-  [0, 0, 0, 0],
-  [0, 0, 0, 0],
-  [0, 0, 0, 0],
+  [4, 0, 2, 2],
+  [2, 0, 0, 0],
+  [4, 0, 0, 0],
+  [8, 0, 0, 0],
 ]);
 
-let gridContainerRef = ref(null);
 // 分数
 let score = ref(0);
 let centerDialogVisible = ref(false);
@@ -99,7 +97,7 @@ const router = useRouter();
 
 onMounted(() => {
   // 添加键盘事件
-  document.addEventListener("keyup", clickKeyUp);
+  document.addEventListener("keyup", processKeyUp);
 
   // 初始化棋盘格;
   initChessboard();
@@ -146,10 +144,15 @@ async function submitScore() {
  * 点击开始新游戏
  */
 const startNewGame = () => {
-  document.addEventListener("keyup", clickKeyUp);
+  document.addEventListener("keyup", processKeyUp);
 
-  // 初始化棋盘格;
-  initChessboard();
+  score.value = 0;
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      chessBoard[i][j] = 0;
+    }
+  }
+  updateBoardView();
 
   // 在棋盘中产生数字
   generateOneNumber();
@@ -344,7 +347,7 @@ function moveDown() {
 /**
  * 往上移动
  */
-function moveTop() {
+function moveUp() {
   if (!canMoveTop()) {
     // 如果不能移动
     debugger;
@@ -352,9 +355,11 @@ function moveTop() {
     return false;
   }
 
+  let isMergeStatus = false;
   for (let i = 1; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       if (chessBoard[i][j] !== 0) {
+        debugger;
         for (let k = 0; k < i; k++) {
           if (chessBoard[k][j] === 0 && noBlockVer(j, k, i)) {
             //上侧为空，不存在障碍物
@@ -367,7 +372,8 @@ function moveTop() {
             continue;
           } else if (
             chessBoard[k][j] === chessBoard[i][j] &&
-            noBlockVer(j, k, i)
+            noBlockVer(j, k, i) &&
+            !isMergeStatus
           ) {
             //move
             //add
@@ -375,6 +381,7 @@ function moveTop() {
             chessBoard[k][j] = 2 * chessBoard[i][j]; //移动过去
             chessBoard[i][j] = 0; // 之前的消失
             score.value = score.value + chessBoard[k][j];
+            isMergeStatus = true;
             break;
           }
         }
@@ -446,14 +453,14 @@ function afterMove() {
 /**
  * 点击上下左右按键
  */
-function clickKeyUp(e) {
+function processKeyUp(e) {
   // nextTick(() => {
   var keyCode = e.keyCode;
   // 点击上键
   if (keyCode === 38) {
     // 这里执行相应的行为动作
-    let moveTopStatus = moveTop();
-    if (moveTopStatus) {
+
+    if (moveUp()) {
       afterMove();
     }
     return;
@@ -546,6 +553,8 @@ function getNumberColor(number) {
 
 /**
  * 判断棋盘中还有空间吗
+ *
+ * @returns true->还有空间, false->没有
  */
 function isChessBoardExistSpace() {
   for (let i = 0; i < 4; i++) {
@@ -604,12 +613,11 @@ function initChessboard() {
     }
   }
 
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      chessBoard[i][j] = 0;
-    }
-  }
-  // chessBoard[0][0] = 2048;
+  // for (let i = 0; i < 4; i++) {
+  //   for (let j = 0; j < 4; j++) {
+  //     chessBoard[i][j] = 0;
+  //   }
+  // }
   updateBoardView();
   score.value = 0;
 }
@@ -718,7 +726,7 @@ async function isGameOver() {
   if (noSpace() && noMove()) {
     ElMessage.error("游戏结束");
     centerDialogVisible.value = true;
-    document.removeEventListener("keyup", clickKeyUp);
+    document.removeEventListener("keyup", processKeyUp);
     // for (let i = 0; i < 4; i++) {
     //   for (let j = 0; j < 4; j++) {
     //     chessBoard[i][j] = 0;
@@ -767,34 +775,33 @@ function showNumberWithAnimation(i, j, randNumber) {
  * @returns
  */
 function generateOneNumber() {
-  //棋盘中还有空间就生成数字
+  // 棋盘中还有空间就生成数字
   if (isChessBoardExistSpace()) {
     // 没有空间返回 false
     return false;
   }
 
   // 随机生成 0-4 的位置不包括 4
-  let randx = parseInt(Math.floor(Math.random() * 4));
-  let randy = parseInt(Math.floor(Math.random() * 4));
+  let randX = parseInt(Math.floor(Math.random() * 4));
+  let randY = parseInt(Math.floor(Math.random() * 4));
 
-  //判断位置是否可用
+  // 判断位置是否可用
   while (true) {
-    if (chessBoard[randx][randy] === 0) {
+    if (chessBoard[randX][randY] === 0) {
       // 位置可用跳出死循环，不可用继续找
       break;
     }
-    randx = parseInt(Math.floor(Math.random() * 4));
-    randy = parseInt(Math.floor(Math.random() * 4));
+    randX = parseInt(Math.floor(Math.random() * 4));
+    randY = parseInt(Math.floor(Math.random() * 4));
   }
 
-  // 随机生成 2 或 4，他们的概率相同
+  // 随机生成 2 或 4，它们的概率相同
   var randNumber = Math.random() > 0.5 ? 2 : 4;
 
-  // 在随机位置显示随机数字
-  chessBoard[randx][randy] = randNumber;
+  // 在随机位置显示随机数字 2 或 4
+  chessBoard[randX][randY] = randNumber;
 
-  // 显示动画效果
-  showNumberWithAnimation(randx, randy, randNumber);
+  showNumberWithAnimation(randX, randY, randNumber);
 }
 </script>
 
@@ -814,23 +821,6 @@ header h1 {
   font-family: "Arial Rounded MT Bold";
   font-size: 30px;
   font-weight: bold;
-}
-
-header #newgamebutton {
-  display: block;
-  margin: 20px auto;
-  width: 100px;
-  padding: 10px 10px;
-  background-color: green;
-
-  font-family: Arial;
-  color: white;
-  border-radius: 10px;
-  text-decoration: none;
-}
-
-header #newgamebutton:hover {
-  background-color: cornflowerblue;
 }
 
 header p {
