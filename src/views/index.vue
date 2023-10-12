@@ -81,10 +81,10 @@ import { useRoute, useRouter } from "vue-router";
 
 // 初始化格子内容
 let chessBoard: number[][] = reactive([
-  [4, 0, 2, 2],
-  [2, 0, 0, 0],
-  [4, 0, 0, 0],
-  [8, 0, 0, 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
 ]);
 
 // 分数
