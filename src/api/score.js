@@ -17,9 +17,10 @@ export function insertScoreApi(data) {
 /**
  * 获取排行榜
  */
-export function getScoreRankApi() {
+export function getScoreRankApi(data) {
     return requestService({
         url: '/2048/getScoreRank',
-        method: 'get',
+        method: 'post',
+        data: data
     })
 }

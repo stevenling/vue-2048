@@ -13,7 +13,7 @@
     <el-dialog
       v-model="centerDialogVisible"
       title="游戏结束"
-      width="30%"
+      width="80%"
       align-center
     >
       <span>你的分数：{{ score }}</span>
@@ -35,42 +35,56 @@
       </template>
     </el-dialog>
 
-    <div id="grid-container">
-      <div>
-        <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
-          <div
-            v-for="(cell, columnIndex) in row"
-            :key="rowIndex + columnIndex"
-            class="grid-cell"
-            :id="'grid-cell-' + rowIndex + '-' + columnIndex"
-          ></div>
-        </div>
+    <!-- -->
 
-        <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
-          <div v-for="(cell, columnIndex) in row" :key="rowIndex + columnIndex">
-            <span
-              class="number-cell"
-              :id="'number-cell-' + rowIndex + '-' + columnIndex"
-              v-show="shouldShowCell(rowIndex, columnIndex)"
-              v-text="cell"
-            ></span>
+    <!-- <v-touch @swipeleft="mobileMoveLeft" class="wrapper"> -->
+    <div>
+      <!-- <Vue3DraggableResizable -->
+      <!-- :resizable="true"
+        @resize-end="resizeGame()"
+        :initW="1000"
+        :initH="1000"
+        v-model:x="x"
+        v-model:y="y"
+        v-model:w="w"
+        v-model:h="h"
+        :parent="true"
+        v-model:active="active"
+      > -->
+      <div
+        id="grid-container"
+        @touchstart="touchstart()"
+        @touchmove="touchmove()"
+        @touchend="touchend()"
+      >
+        <div>
+          <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
+            <div
+              v-for="(cell, columnIndex) in row"
+              :key="rowIndex + columnIndex"
+              class="grid-cell"
+              :id="'grid-cell-' + rowIndex + '-' + columnIndex"
+            ></div>
+          </div>
+
+          <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
+            <div
+              v-for="(cell, columnIndex) in row"
+              :key="rowIndex + columnIndex"
+            >
+              <span
+                class="number-cell"
+                :id="'number-cell-' + rowIndex + '-' + columnIndex"
+                v-show="shouldShowCell(rowIndex, columnIndex)"
+                v-text="cell"
+              ></span>
+            </div>
           </div>
         </div>
       </div>
+      <!-- </Vue3DraggableResizable> -->
     </div>
   </div>
-  <!-- <table>
-    <tr v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
-      <td v-for="(cell, columnIndex) in row" :key="columnIndex">
-        <div>
-          {{ cell }}
-        </div>
-      </td>
-    </tr>
-  </table> -->
-  <!-- <div>
-
-  </div> -->
 </template>
 
 <script setup lang="ts">
@@ -80,6 +94,14 @@ import { nextTick } from "vue";
 import $ from "jquery";
 import { insertScoreApi } from "../api/score";
 import { useRoute, useRouter } from "vue-router";
+import Vue3DraggableResizable from "vue3-draggable-resizable";
+//default styles
+import "vue3-draggable-resizable/dist/Vue3DraggableResizable.css";
+let x = ref(100);
+let y = ref(100);
+let h = ref(1000);
+let w = ref(1000);
+let active = ref(true);
 
 // 初始化格子内容
 let chessBoard: number[][] = reactive([
@@ -98,19 +120,58 @@ let playerName = ref();
 const router = useRouter();
 let useTime = ref(0);
 
+const chessBoardWidth = ref(82.5);
+const chessBoardHeight = ref(82.5);
+
 onMounted(() => {
   // 添加键盘事件
   document.addEventListener("keyup", processKeyUp);
-
   // 初始化棋盘格;
   initChessboard();
-  // setInterval(() => useTime.value++, 1000);
   useTime.value = 0;
-
-  // 在棋盘中产生数字
-  // generateOneNumber();
-  // generateOneNumber();
 });
+
+let startX = ref();
+let startY = ref();
+
+/**
+ * 点击
+ */
+function touchstart() {
+  event.preventDefault(); //阻止默认事件（长按的时候出现复制）
+  startX.value = event.changedTouches[0].pageX;
+  startY.value = event.changedTouches[0].pageY;
+}
+
+function touchmove() {}
+
+function touchend() {
+  // 手释放，如果在500毫秒内就释放，则取消长按事件
+  event.preventDefault();
+
+  let moveEndX = event.changedTouches[0].pageX;
+  let moveEndY = event.changedTouches[0].pageY;
+  let X = moveEndX - startX.value;
+  let Y = moveEndY - startY.value;
+
+  if (Math.abs(X) > Math.abs(Y) && X > 0) {
+    if (moveRight()) {
+      afterMove();
+    }
+  } else if (Math.abs(X) > Math.abs(Y) && X < 0) {
+    if (moveLeft()) {
+      afterMove();
+    }
+  } else if (Math.abs(Y) > Math.abs(X) && Y > 0) {
+    if (moveDown()) {
+      afterMove();
+    }
+  } else if (Math.abs(Y) > Math.abs(X) && Y < 0) {
+    if (moveUp()) {
+      afterMove();
+    }
+  }
+}
 
 /**
  * 点击跳转到查看排行榜页面
@@ -128,12 +189,14 @@ async function submitScore() {
   let scoreData = {
     score: 0,
     playerName: "",
+    useTime: 0,
   };
   if (playerName.value === "" || playerName.value === undefined) {
     playerName.value = "匿名用户";
   }
   scoreData.score = score.value;
   scoreData.playerName = playerName.value;
+  scoreData.useTime = useTime.value;
 
   insertScoreApi(scoreData)
     .then((res) => {
@@ -178,11 +241,11 @@ const shouldShowCell = (rowIndex, columnIndex) => {
 };
 
 function getPosTop(i, j) {
-  return 20 + i * 120;
+  return 10 + i * 100;
 }
 
 function getPosLeft(i, j) {
-  return 20 + j * 120;
+  return 10 + j * 100;
 }
 
 /**
@@ -192,7 +255,7 @@ function getPosLeft(i, j) {
  *
  * @return 可以返回 true, 不能返回 false
  */
-function canMoveTop() {
+function canMoveUp() {
   for (let i = 1; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       if (chessBoard[i][j] !== 0) {
@@ -207,18 +270,12 @@ function canMoveTop() {
       }
     }
   }
-  // 不能向上移动
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      console.log(chessBoard[i][j]);
-    }
-  }
   return false;
 }
 
 /**
  * 判断垂直障碍物是否存在
- * 在同一列的 startRow 和 endRow 中间只要有一个值不为 0，说明垂直方向存在障碍物
+ * 在同一列的 startRow 和 endRow 中间只要有一个值为 0，说明垂直方向存在障碍物
  *
  * @return 存在 false, 不存在 true
  */
@@ -374,7 +431,7 @@ function moveDown() {
  * 往上移动
  */
 function moveUp() {
-  if (!canMoveTop()) {
+  if (!canMoveUp()) {
     // 如果不能移动
     console.log("无法向上移动");
     return false;
@@ -489,16 +546,19 @@ function afterMove() {
   }, 300);
 }
 
+function mobileMoveLeft() {
+  ElMessage.success("向左滑动");
+  score.value = "6666";
+  console.log("向左滑动");
+}
+
 /**
  * 点击上下左右按键
  */
 function processKeyUp(e) {
-  // nextTick(() => {
   var keyCode = e.keyCode;
   // 点击上键
   if (keyCode === 38) {
-    // 这里执行相应的行为动作
-
     if (moveUp()) {
       afterMove();
     }
@@ -526,7 +586,6 @@ function processKeyUp(e) {
     }
     return;
   }
-  // });
 }
 
 /**
@@ -615,17 +674,23 @@ function updateBoardView() {
     for (let j = 0; j < 4; j++) {
       let theNumberCell = document.getElementById("number-cell-" + i + "-" + j);
       if (chessBoard[i][j] !== 0 && theNumberCell) {
-        theNumberCell.style.width = "100px";
-        theNumberCell.style.height = "100px";
+        // theNumberCell.style.width = "100px";
+        // theNumberCell.style.height = "100px";
+
+        theNumberCell.style.width = chessBoardWidth.value + "px";
+        theNumberCell.style.height = chessBoardHeight.value + "px";
+
         theNumberCell.style.top = getPosTop(i, j) + "px";
         theNumberCell.style.left = getPosLeft(i, j) + "px";
 
-        if (chessBoard[i][j] >= 1024 && chessBoard[i][j] <= 10000) {
-          theNumberCell.style.fontSize = "38px";
+        if (chessBoard[i][j] >= 100 && chessBoard[i][j] < 1024) {
+          theNumberCell.style.fontSize = "42px";
+        } else if (chessBoard[i][j] >= 1024 && chessBoard[i][j] <= 10000) {
+          theNumberCell.style.fontSize = "32px";
         } else if (chessBoard[i][j] > 10000 && chessBoard[i][j] < 100000) {
-          theNumberCell.style.fontSize = "30px";
-        } else if (chessBoard[i][j] > 100000) {
-          theNumberCell.style.fontSize = "28px";
+          theNumberCell.style.fontSize = "26px";
+        } else if (chessBoard[i][j] >= 100000) {
+          theNumberCell.style.fontSize = "22px";
         } else {
           theNumberCell.style.fontSize = "60px";
         }
@@ -678,7 +743,7 @@ function initChessboard() {
  */
 function noMove() {
   // 只要有一个方向可以移动，就能移动
-  if (canMoveDown() || canMoveLeft() || canMoveRight() || canMoveTop()) {
+  if (canMoveDown() || canMoveLeft() || canMoveRight() || canMoveUp()) {
     return false;
   }
 
@@ -793,8 +858,6 @@ function showNumberWithAnimation(i, j, randNumber) {
     // 获取随机数值的背景颜色
     numberCell.style.top = getPosTop(i, j) + "px";
     numberCell.style.left = getPosLeft(i, j) + "px";
-    // numberCell.style.width = "100px";
-    // numberCell.style.height = "100px";
 
     let backgroundColor = getNumberBackgroundColor(randNumber);
     numberCell.style.backgroundColor = backgroundColor;
@@ -802,18 +865,9 @@ function showNumberWithAnimation(i, j, randNumber) {
     let color = getNumberColor(randNumber);
 
     numberCell.style.color = color;
-
-    // numberCell.animate(
-    //   {
-    //     // width: "100px",
-    //     // height: "100px",
-    //     top: getPosTop(i, j) + "px",
-    //     left: getPosLeft(i, j) + "px",
-    //   },
-    //   150
-    // );
-    numberCell.style.width = "100px";
-    numberCell.style.height = "100px";
+    numberCell.style.fontSize = "60px";
+    numberCell.style.width = chessBoardWidth.value + "px";
+    numberCell.style.height = chessBoardHeight.value + "px";
     numberCell.textContent = randNumber;
   }
 }
@@ -855,6 +909,9 @@ function generateOneNumber() {
 </script>
 
 <style scoped>
+body {
+  /* overflow: hidden; */
+}
 header {
   display: block;
   margin: 0 auto;
@@ -879,8 +936,11 @@ header p {
 }
 
 #grid-container {
-  width: 460px;
-  height: 460px;
+  /* width: 460px;
+  height: 460px; */
+
+  width: 360px;
+  height: 360px;
   padding: 20px;
   margin: 15px auto;
   background-color: #bbada0;
@@ -889,8 +949,11 @@ header p {
 }
 
 .grid-cell {
-  width: 100px;
-  height: 100px;
+  /* width: 100px;
+  height: 100px; */
+
+  width: 82.5px;
+  height: 82.5px;
   border-radius: 6px;
   background-color: #ccc0b3;
   position: absolute;
@@ -901,7 +964,7 @@ header p {
   font-family: Arial;
   border-radius: 6px;
   font-size: 60px;
-  line-height: 100px;
+  line-height: 82.5px;
   text-align: center;
   position: absolute;
 }
@@ -913,7 +976,17 @@ header p {
 .use-time-class {
   width: 100px;
   margin-top: 20px;
-  margin-left: 280px;
+  margin-left: 240px;
   position: relative;
 }
+
+/* .parent {
+  width: 460px;
+  height: 460px;
+  position: absolute;
+  top: 100px;
+  left: 200px;
+  position: relative;
+  border: 1px solid #000;
+} */
 </style>
