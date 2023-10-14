@@ -1,11 +1,26 @@
 <template>
-  <!-- <div tabindex="0" @keyup.up="processKeyUp"> -->
-  <!-- @click="showScoreRank" -->
   <div>
     <header>
-      <h1>2048</h1>
+      <h2>2048</h2>
       <el-button type="primary" @click="startNewGame">开始新游戏</el-button>
       <el-button type="warning" @click="showScoreRank">查看排行榜</el-button>
+
+      <audio
+        class="music-class"
+        controls
+        :src="musicUrl"
+        loop
+        @play="onPlay"
+      ></audio>
+
+      <el-radio-group v-model="defaultTheme" size="small" @change="selectTheme">
+        <el-radio-button @keydown="handleKeydown" label="默认" />
+        <el-radio-button @keydown="handleKeydown" label="青灰" />
+        <el-radio-button @keydown="handleKeydown" label="风信紫" />
+        <el-radio-button @keydown="handleKeydown" label="琥珀黄" />
+        <el-radio-button @keydown="handleKeydown" label="梦幻粉" />
+      </el-radio-group>
+
       <p class="score-class" id="score">score:{{ score }}</p>
       <div class="use-time-class">用时：{{ useTime }} 秒</div>
     </header>
@@ -28,29 +43,14 @@
             clearable
           />
           <el-button @click="centerDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitScore">
-            提交到全球排行榜
-          </el-button>
+          <el-button type="primary" @click="submitScore"
+            >提交到全球排行榜</el-button
+          >
         </span>
       </template>
     </el-dialog>
 
-    <!-- -->
-
-    <!-- <v-touch @swipeleft="mobileMoveLeft" class="wrapper"> -->
     <div>
-      <!-- <Vue3DraggableResizable -->
-      <!-- :resizable="true"
-        @resize-end="resizeGame()"
-        :initW="1000"
-        :initH="1000"
-        v-model:x="x"
-        v-model:y="y"
-        v-model:w="w"
-        v-model:h="h"
-        :parent="true"
-        v-model:active="active"
-      > -->
       <div
         id="grid-container"
         @touchstart="touchstart()"
@@ -82,7 +82,6 @@
           </div>
         </div>
       </div>
-      <!-- </Vue3DraggableResizable> -->
     </div>
   </div>
 </template>
@@ -95,20 +94,17 @@ import $ from "jquery";
 import { insertScoreApi } from "../api/score";
 import { useRoute, useRouter } from "vue-router";
 import Vue3DraggableResizable from "vue3-draggable-resizable";
-//default styles
+
 import "vue3-draggable-resizable/dist/Vue3DraggableResizable.css";
-let x = ref(100);
-let y = ref(100);
-let h = ref(1000);
-let w = ref(1000);
-let active = ref(true);
+
+const defaultTheme = ref("默认");
 
 // 初始化格子内容
 let chessBoard: number[][] = reactive([
-  [0, 0, 0, 0],
-  [0, 0, 0, 0],
-  [0, 0, 0, 0],
-  [0, 0, 0, 0],
+  [2, 256, 512, 65536],
+  [4, 128, 1024, 32768],
+  [8, 64, 2048, 16384],
+  [16, 32, 4096, 8192],
 ]);
 
 // 分数
@@ -118,14 +114,190 @@ let centerDialogVisible = ref(false);
 let playerName = ref();
 // 路由
 const router = useRouter();
+// 用时
 let useTime = ref(0);
-
+// 棋盘宽高
 const chessBoardWidth = ref(82.5);
 const chessBoardHeight = ref(82.5);
 
+// 本地音乐
+const musicUrl =
+  "https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/%E5%8D%A1%E5%86%9C.mp3";
+
+/**
+ * el-radio 阻止上下左右切换
+ */
+function handleKeydown(event) {
+  // 阻止上下左右箭头键触发选项切换
+  if (
+    event.key === "ArrowUp" ||
+    event.key === "ArrowDown" ||
+    event.key === "ArrowLeft" ||
+    event.key === "ArrowRight"
+  ) {
+    event.preventDefault();
+  }
+}
+
+/**
+ * 主题列表
+ */
+const themeList = reactive([
+  {
+    themeName: "默认",
+    customBackgroundColor: {
+      2: "#eee4da",
+      4: "#ede0c8",
+      8: "#f2b179",
+      16: "#f59563",
+      32: "#f67c5f",
+      64: "#f65e3b",
+      128: "#edcf72",
+      256: "#edcc61",
+      512: "#9c0",
+      1024: "#33b5e5",
+      2048: "#09c",
+      4096: "#a6c",
+      8192: "#93c",
+      16384: "#7807f9",
+      32768: "black",
+      65536: "black",
+    },
+    // 字体颜色
+    customFontColor: {
+      2: "#776e65",
+      2047: "#fffcff",
+    },
+    // 棋盘背景颜色
+    customGridContainerBackgroundColor: "#bbada0",
+    // 方块背景颜色
+    customGridCellBackgroundColor: "#ccc0b3",
+  },
+  {
+    themeName: "青灰",
+    customBackgroundColor: {
+      2: "#dcdcdc",
+      4: "#d8d8d8",
+      8: "#d4d4d4",
+      16: "#d0d0d0",
+      32: "#c0c0c0",
+      64: "#b0b0b0",
+      128: "#a0a0a0",
+      256: "#909090",
+      512: "#808080",
+      1024: "#707070",
+      2048: "#606060",
+      4096: "#505050",
+      8192: "#404040",
+      16384: "#303030",
+      32768: "#202020",
+      65536: "#000000",
+    },
+    customFontColor: "#fffcff",
+    customGridContainerBackgroundColor: "#b6b6b6",
+    customGridCellBackgroundColor: "#afafaf",
+  },
+  {
+    themeName: "风信紫",
+    customBackgroundColor: {
+      2: "#a0a8d6",
+      4: "#af9ed5",
+      8: "#9176c7",
+      16: "#7058ba",
+      32: "#935dbb",
+      64: "#613cae",
+      128: "#44288f",
+      256: "#5432af",
+      512: "#643ccb",
+      1024: "#7446eb",
+      2048: "#845aff",
+      4096: "#9464ff",
+      8192: "#a46eff",
+      16384: "#b478ff",
+      32768: "black",
+      65536: "black",
+    },
+    customFontColor: "#fcffff",
+    customGridContainerBackgroundColor: "#ddbef7",
+    customGridCellBackgroundColor: "#d3b8eb",
+  },
+  {
+    themeName: "琥珀黄",
+    customBackgroundColor: {
+      2: "#dcdcdc",
+      4: "#d8d8d8",
+      8: "#d4d4d4",
+      16: "#d0d0d0",
+      32: "#c0c0c0",
+      64: "#b0b0b0",
+      128: "#a0a0a0",
+      256: "#909090",
+      512: "#808080",
+      1024: "#707070",
+      2048: "#606060",
+      4096: "#505050",
+      8192: "#404040",
+      16384: "#303030",
+      32768: "#202020",
+      65536: "#000000",
+    },
+    customFontColor: "#fffcff",
+    customGridContainerBackgroundColor: "#b6b6b6",
+    customGridCellBackgroundColor: "#afafaf",
+  },
+  {
+    themeName: "梦幻粉",
+    customBackgroundColor: {
+      2: "#dcdcdc",
+      4: "#d8d8d8",
+      8: "#d4d4d4",
+      16: "#d0d0d0",
+      32: "#c0c0c0",
+      64: "#b0b0b0",
+      128: "#a0a0a0",
+      256: "#909090",
+      512: "#808080",
+      1024: "#707070",
+      2048: "#606060",
+      4096: "#505050",
+      8192: "#404040",
+      16384: "#303030",
+      32768: "#202020",
+      65536: "#000000",
+    },
+    customFontColor: "#fffcff",
+    customGridContainerBackgroundColor: "#b6b6b6",
+    customGridCellBackgroundColor: "#afafaf",
+  },
+]);
+// 自定义棋盘的背景颜色
+
+// 当前选择的主题
+const currentSelectThemeStyle = ref(themeList[0]);
+
+/**
+ * 选择主题
+ */
+let currentTheme = ref("默认");
+const selectTheme = (value) => {
+  currentTheme.value = value;
+  if (value === "默认") {
+    currentSelectThemeStyle.value = themeList[0];
+  } else if (value === "青灰") {
+    currentSelectThemeStyle.value = themeList[1];
+  } else if (value === "风信紫") {
+    currentSelectThemeStyle.value = themeList[2];
+  } else if (value === "琥珀黄") {
+    ElMessage.error("云胡写不动代码了, 暂时和青灰一样");
+    currentSelectThemeStyle.value = themeList[3];
+  } else if (value === "梦幻粉") {
+    ElMessage.error("云胡写不动代码了, 暂时和青灰一样");
+    currentSelectThemeStyle.value = themeList[4];
+  }
+  updateBoardView();
+};
+
 onMounted(() => {
-  // 添加键盘事件
-  document.addEventListener("keyup", processKeyUp);
   // 初始化棋盘格;
   initChessboard();
   useTime.value = 0;
@@ -138,7 +310,8 @@ let startY = ref();
  * 点击
  */
 function touchstart() {
-  event.preventDefault(); //阻止默认事件（长按的时候出现复制）
+  // 阻止默认事件（长按的时候出现复制）
+  event.preventDefault();
   startX.value = event.changedTouches[0].pageX;
   startY.value = event.changedTouches[0].pageY;
 }
@@ -146,7 +319,6 @@ function touchstart() {
 function touchmove() {}
 
 function touchend() {
-  // 手释放，如果在500毫秒内就释放，则取消长按事件
   event.preventDefault();
 
   let moveEndX = event.changedTouches[0].pageX;
@@ -217,9 +389,9 @@ let timer = ref();
 const startNewGame = () => {
   document.addEventListener("keyup", processKeyUp);
   useTime.value = 0;
+  clearInterval(timer.value);
   timer.value = setInterval(() => useTime.value++, 1000);
-  score.value = 0;
-  useTime.value = 0;
+
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       chessBoard[i][j] = 0;
@@ -259,7 +431,6 @@ function canMoveUp() {
   for (let i = 1; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       if (chessBoard[i][j] !== 0) {
-        // debugger
         if (
           chessBoard[i - 1][j] === 0 ||
           chessBoard[i - 1][j] === chessBoard[i][j]
@@ -311,17 +482,6 @@ function showMoveAnimation(fromX, fromY, toX, toY) {
   let numberCell = document.getElementById(
     "number-cell-" + fromX + "-" + fromY
   );
-
-  // let fromTopValue = getPosTop(fromX, fromY) + "px";
-  // let fromleftValue = getPosLeft(fromX, fromY) + "px";
-  // console.log(fromTopValue + " " + fromleftValue);
-
-  let topValue = getPosTop(toX, toY) + "px";
-  let leftValue = getPosLeft(toX, toY) + "px";
-
-  // console.log(
-  //   fromTopValue + " " + fromleftValue + "->" + topValue + " " + leftValue
-  // );
 
   // 200ms 动画效果不好
   // 50 ms 好
@@ -400,14 +560,14 @@ function moveDown() {
     for (let columnIndex = 0; columnIndex < 4; columnIndex++) {
       if (chessBoard[rowIndex][columnIndex] !== 0) {
         for (let k = canMoveDownRowIndex[columnIndex]; k >= rowIndex + 1; k--) {
-          //下侧为空
+          // 下侧为空
           if (
             chessBoard[k][columnIndex] === 0 &&
             noBlockVer(columnIndex, rowIndex, k)
           ) {
             showMoveAnimation(rowIndex, columnIndex, k, columnIndex);
-            chessBoard[k][columnIndex] = chessBoard[rowIndex][columnIndex]; //移动过去
-            chessBoard[rowIndex][columnIndex] = 0; //之前的消失
+            chessBoard[k][columnIndex] = chessBoard[rowIndex][columnIndex];
+            chessBoard[rowIndex][columnIndex] = 0;
             continue;
           } else if (
             chessBoard[k][columnIndex] === chessBoard[rowIndex][columnIndex] &&
@@ -449,7 +609,6 @@ function moveUp() {
             noBlockVer(columnIndex, k, rowIndex)
           ) {
             //上侧为空，不存在障碍物
-            // move
             showMoveAnimation(rowIndex, columnIndex, k, columnIndex);
             // 移动过去
             chessBoard[k][columnIndex] = chessBoard[rowIndex][columnIndex];
@@ -460,14 +619,10 @@ function moveUp() {
             chessBoard[k][columnIndex] === chessBoard[rowIndex][columnIndex] &&
             noBlockVer(columnIndex, k, rowIndex)
           ) {
-            //move
-            //add
             showMoveAnimation(rowIndex, columnIndex, k, columnIndex);
-            chessBoard[k][columnIndex] = 2 * chessBoard[rowIndex][columnIndex]; //移动过去
-            chessBoard[rowIndex][columnIndex] = 0; // 之前的消失
+            chessBoard[k][columnIndex] = 2 * chessBoard[rowIndex][columnIndex];
+            chessBoard[rowIndex][columnIndex] = 0;
             score.value = score.value + chessBoard[k][columnIndex];
-            // isMergeStatus = true;
-            // canMoveTopRowIndex = k + 1;
             canMoveTopRowIndex[columnIndex] = k + 1;
             continue;
           }
@@ -486,7 +641,6 @@ function moveLeft() {
   if (!canMoveLeft()) {
     return false;
   }
-  // debugger;
 
   // 每一行能移动到最左侧的那个列数
   let canMoveLeftColumnIndex = [0, 0, 0, 0];
@@ -510,8 +664,6 @@ function moveLeft() {
             chessBoard[rowIndex][k] == chessBoard[rowIndex][columnIndex] &&
             noBlockHor(rowIndex, k, columnIndex)
           ) {
-            //move
-            //add
             showMoveAnimation(rowIndex, columnIndex, rowIndex, k);
             chessBoard[rowIndex][k] = 2 * chessBoard[rowIndex][columnIndex]; //移动过去
             chessBoard[rowIndex][columnIndex] = 0; //之前的消失
@@ -530,11 +682,6 @@ function moveLeft() {
  * 移动之后的处理，更新界面，生成一个新的格子，判断游戏是否结束
  */
 function afterMove() {
-  // 延时会有残影
-  // setTimeout(() => {
-  //   //设置延迟执行
-  //   updateBoardView();
-  // }, 150);
   updateBoardView();
 
   setTimeout(() => {
@@ -544,12 +691,6 @@ function afterMove() {
   setTimeout(() => {
     isGameOver();
   }, 300);
-}
-
-function mobileMoveLeft() {
-  ElMessage.success("向左滑动");
-  score.value = "6666";
-  console.log("向左滑动");
 }
 
 /**
@@ -594,59 +735,70 @@ function processKeyUp(e) {
 function getNumberBackgroundColor(number) {
   switch (number) {
     case 2:
-      return "#eee4da";
+      return currentSelectThemeStyle.value.customBackgroundColor[2];
       break;
     case 4:
-      return "#ede0c8";
+      return currentSelectThemeStyle.value.customBackgroundColor[4];
       break;
     case 8:
-      return "#f2b179";
+      return currentSelectThemeStyle.value.customBackgroundColor[8];
       break;
     case 16:
-      return "#f59563";
+      return currentSelectThemeStyle.value.customBackgroundColor[16];
       break;
     case 32:
-      return "#f67c5f";
+      return currentSelectThemeStyle.value.customBackgroundColor[32];
       break;
     case 64:
-      return "#f65e3b";
+      return currentSelectThemeStyle.value.customBackgroundColor[64];
       break;
     case 128:
-      return "#edcf72";
+      return currentSelectThemeStyle.value.customBackgroundColor[128];
       break;
     case 256:
-      return "#edcc61";
+      return currentSelectThemeStyle.value.customBackgroundColor[256];
       break;
     case 512:
-      return "#9c0";
+      return currentSelectThemeStyle.value.customBackgroundColor[512];
       break;
     case 1024:
-      return "#33b5e5";
+      return currentSelectThemeStyle.value.customBackgroundColor[1024];
       break;
     case 2048:
-      return "#09c";
+      return currentSelectThemeStyle.value.customBackgroundColor[2048];
       break;
     case 4096:
-      return "#a6c";
+      return currentSelectThemeStyle.value.customBackgroundColor[4096];
       break;
     case 8192:
-      return "#93c";
+      return currentSelectThemeStyle.value.customBackgroundColor[8192];
       break;
     case 16384:
-      return "#aa60a6";
+      return currentSelectThemeStyle.value.customBackgroundColor[16384];
       break;
+    case 32768:
+      return currentSelectThemeStyle.value.customBackgroundColor[32768];
+      break;
+    case 65536:
+      return currentSelectThemeStyle.value.customBackgroundColor[65536];
+      break;
+      return "black";
   }
-  return "black";
 }
 
 /**
  * 获取数字颜色
  */
 function getNumberColor(number) {
-  if (number <= 4 && number >= 2) {
-    return "#776e65";
+  if (currentTheme.value === "默认") {
+    if (number <= 4 && number >= 2) {
+      return currentSelectThemeStyle.value.customFontColor[2];
+    } else {
+      return currentSelectThemeStyle.value.customFontColor[2047];
+    }
   }
-  return "white";
+
+  return currentSelectThemeStyle.value.customFontColor;
 }
 
 /**
@@ -670,13 +822,12 @@ function isChessBoardExistSpace() {
  * 重绘界面
  */
 function updateBoardView() {
+  changeChessboardBackgroundColor();
+
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       let theNumberCell = document.getElementById("number-cell-" + i + "-" + j);
       if (chessBoard[i][j] !== 0 && theNumberCell) {
-        // theNumberCell.style.width = "100px";
-        // theNumberCell.style.height = "100px";
-
         theNumberCell.style.width = chessBoardWidth.value + "px";
         theNumberCell.style.height = chessBoardHeight.value + "px";
 
@@ -686,11 +837,11 @@ function updateBoardView() {
         if (chessBoard[i][j] >= 100 && chessBoard[i][j] < 1024) {
           theNumberCell.style.fontSize = "42px";
         } else if (chessBoard[i][j] >= 1024 && chessBoard[i][j] <= 10000) {
-          theNumberCell.style.fontSize = "32px";
+          theNumberCell.style.fontSize = "30px";
         } else if (chessBoard[i][j] > 10000 && chessBoard[i][j] < 100000) {
-          theNumberCell.style.fontSize = "26px";
-        } else if (chessBoard[i][j] >= 100000) {
           theNumberCell.style.fontSize = "22px";
+        } else if (chessBoard[i][j] >= 100000) {
+          theNumberCell.style.fontSize = "18px";
         } else {
           theNumberCell.style.fontSize = "60px";
         }
@@ -713,25 +864,34 @@ function updateBoardView() {
 }
 
 /**
- * 初始化棋盘
+ * 切换棋盘背景颜色
  */
-function initChessboard() {
-  // 设置位置
+function changeChessboardBackgroundColor() {
+  // 切换棋盘背景颜色
+  let gridContainer = document.getElementById("grid-container");
+  if (gridContainer) {
+    gridContainer.style.backgroundColor =
+      currentSelectThemeStyle.value.customGridContainerBackgroundColor;
+  }
+
+  // 切换每一个方格的背景颜色
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
       let gridCell = document.getElementById("grid-cell-" + i + "-" + j);
       if (gridCell) {
         gridCell.style.top = getPosTop(i, j) + "px";
         gridCell.style.left = getPosLeft(i, j) + "px";
+        gridCell.style.backgroundColor =
+          currentSelectThemeStyle.value.customGridCellBackgroundColor;
       }
     }
   }
+}
 
-  // for (let i = 0; i < 4; i++) {
-  //   for (let j = 0; j < 4; j++) {
-  //     chessBoard[i][j] = 0;
-  //   }
-  // }
+/**
+ * 初始化棋盘
+ */
+function initChessboard() {
   updateBoardView();
   score.value = 0;
 }
@@ -745,14 +905,6 @@ function noMove() {
   // 只要有一个方向可以移动，就能移动
   if (canMoveDown() || canMoveLeft() || canMoveRight() || canMoveUp()) {
     return false;
-  }
-
-  // 无法移动
-  console.log("完全无法移动");
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      console.log(chessBoard[i][j]);
-    }
   }
   return true;
 }
@@ -770,7 +922,8 @@ function canMoveLeft() {
           chessBoard[i][j - 1] === 0 ||
           chessBoard[i][j - 1] === chessBoard[i][j]
         )
-          return true; //可以向左移动
+          // 可以向左移动
+          return true;
       }
     }
   }
@@ -796,7 +949,8 @@ function canMoveRight() {
       }
     }
   }
-  return false; //不能向右移动
+  // 不能向右移动
+  return false;
 }
 
 /**
@@ -810,11 +964,13 @@ function canMoveDown() {
           chessBoard[i + 1][j] === 0 ||
           chessBoard[i + 1][j] === chessBoard[i][j]
         )
-          return true; //可以向下移动
+          // 可以向下移动
+          return true;
       }
     }
   }
-  return false; //不能向下移动
+  // 不能向下移动
+  return false;
 }
 
 /**
@@ -841,11 +997,6 @@ async function isGameOver() {
     centerDialogVisible.value = true;
     clearInterval(timer.value);
     document.removeEventListener("keyup", processKeyUp);
-    // for (let i = 0; i < 4; i++) {
-    //   for (let j = 0; j < 4; j++) {
-    //     chessBoard[i][j] = 0;
-    //   }
-    // }
   }
 }
 
@@ -863,7 +1014,6 @@ function showNumberWithAnimation(i, j, randNumber) {
     numberCell.style.backgroundColor = backgroundColor;
 
     let color = getNumberColor(randNumber);
-
     numberCell.style.color = color;
     numberCell.style.fontSize = "60px";
     numberCell.style.width = chessBoardWidth.value + "px";
@@ -909,9 +1059,6 @@ function generateOneNumber() {
 </script>
 
 <style scoped>
-body {
-  /* overflow: hidden; */
-}
 header {
   display: block;
   margin: 0 auto;
@@ -936,26 +1083,18 @@ header p {
 }
 
 #grid-container {
-  /* width: 460px;
-  height: 460px; */
-
   width: 360px;
   height: 360px;
   padding: 20px;
   margin: 15px auto;
-  background-color: #bbada0;
   border-radius: 10px;
   position: relative;
 }
 
 .grid-cell {
-  /* width: 100px;
-  height: 100px; */
-
   width: 82.5px;
   height: 82.5px;
   border-radius: 6px;
-  background-color: #ccc0b3;
   position: absolute;
 }
 
@@ -980,13 +1119,7 @@ header p {
   position: relative;
 }
 
-/* .parent {
-  width: 460px;
-  height: 460px;
-  position: absolute;
-  top: 100px;
-  left: 200px;
-  position: relative;
-  border: 1px solid #000;
-} */
+.music-class {
+  margin: 20px;
+}
 </style>

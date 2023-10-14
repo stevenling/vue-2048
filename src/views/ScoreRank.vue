@@ -4,17 +4,18 @@
       <div>
         <h1>2048 全球排行榜</h1>
       </div>
-
-      <el-radio-group v-model="rankName" size="large" @change="selectRanking">
-        <el-radio-button v-model="dayRanking" label="日榜" />
-        <el-radio-button v-model="weekRanking" label="周榜" />
-        <el-radio-button v-model="monthRanking" label="月榜" />
-        <el-radio-button v-model="allRanking" label="总榜" />
-        <el-button class="back-to-game-class" @click="backToGame"
-          >回到游戏界面</el-button
+      <div class="title-class">
+        <el-button type="info" class="back-to-game-class" @click="backToGame"
+          >返回</el-button
         >
-      </el-radio-group>
 
+        <el-radio-group v-model="rankName" size="large" @change="selectRanking">
+          <el-radio-button v-model="dayRanking" label="日榜" />
+          <el-radio-button v-model="weekRanking" label="周榜" />
+          <el-radio-button v-model="monthRanking" label="月榜" />
+          <el-radio-button v-model="allRanking" label="总榜" />
+        </el-radio-group>
+      </div>
       <el-table
         :data="scoreRankData"
         height="800"
@@ -42,9 +43,6 @@ import { useRoute, useRouter } from "vue-router";
 name: "ScoreRank";
 
 let scoreRankData = ref();
-let topStatus = ref(true);
-let secondStatus = ref(true);
-let thirdStatus = ref(true);
 const rankName = ref("日榜");
 
 /**
@@ -58,17 +56,6 @@ const selectRanking = (selectRankName) => {
   getScoreRankApi(data)
     .then((res) => {
       scoreRankData.value = res.data.data;
-      // if (scoreRank.value.length >= 0) {
-      //   scoreRankData.value[0].name = "🏆 " + scoreRankData.value[0].name;
-      // }
-
-      // if (scoreRank.value.length >= 1) {
-      //   scoreRankData.value[1].name = "🥈  " + scoreRankData.value[1].name;
-      // }
-
-      // if (scoreRank.value.length >= 2) {
-      //   scoreRankData.value[2].name = "🥉  " + scoreRankData.value[2].name;
-      // }
     })
     .catch((error) => console.log(error));
 };
@@ -93,17 +80,6 @@ onMounted(() => {
   getScoreRankApi(data)
     .then((res) => {
       scoreRankData.value = res.data.data;
-      // if (scoreRank.value.length > 0) {
-      //   scoreRankData.value[0].name = "🏆 " + scoreRankData.value[0].name;
-      // }
-
-      // if (scoreRank.value.length > 1) {
-      //   scoreRankData.value[1].name = "🥈  " + scoreRankData.value[1].name;
-      // }
-
-      // if (scoreRank.value.length > 2) {
-      //   scoreRankData.value[2].name = "🥉  " + scoreRankData.value[2].name;
-      // }
     })
     .catch((error) => console.log(error));
 });
@@ -120,7 +96,7 @@ const backToGame = () => {
 .score-rank-class {
   display: flex;
   flex-direction: column;
-  align-items: center; /* 交叉轴对齐方式 */
+  align-items: center;
 }
 
 .el-table .gold-row {
@@ -135,11 +111,19 @@ const backToGame = () => {
 .el-table .copper-row {
   --el-table-tr-bg-color: #b87333;
 }
+
 .el-table .iron-row {
   --el-table-tr-bg-color: #d0e7fb;
 }
 
 .back-to-game-class {
-  margin-left: 80px;
+  margin-right: 20px;
+  height: auto;
+}
+
+.title-class {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
 }
 </style>
