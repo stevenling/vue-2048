@@ -2,16 +2,22 @@
   <div>
     <header>
       <h2>2048</h2>
-      <el-button type="primary" @click="startNewGame">开始新游戏</el-button>
-      <el-button type="warning" @click="showScoreRank">查看排行榜</el-button>
-
-      <audio
-        class="music-class"
-        controls
-        :src="musicUrl"
-        loop
-        @play="onPlay"
-      ></audio>
+      <div class="menu-class">
+        <el-button type="primary" @click="startNewGame">开始新游戏</el-button>
+        <el-button color="#626aef" @click="showScoreRank">查看排行榜</el-button>
+        <Service
+          class="music-icon-class"
+          v-if="isPlaying"
+          :src="musicUrl"
+          @click="onPlay"
+        />
+        <MuteNotification
+          class="music-icon-class"
+          v-else-if="!isPlaying"
+          :src="musicUrl"
+          @click="onPlay"
+        />
+      </div>
 
       <el-radio-group v-model="defaultTheme" size="small" @change="selectTheme">
         <el-radio-button @keydown="handleKeydown" label="默认" />
@@ -83,12 +89,18 @@
         </div>
       </div>
     </div>
+    <el-text color="#626aef" class="about-author-class" @click="showAuthor"
+      >关于开发者</el-text
+    >
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from "vue";
 import { ElMessage } from "element-plus";
+import { ElNotification } from "element-plus";
+import { h } from "vue";
+
 import { nextTick } from "vue";
 import $ from "jquery";
 import { insertScoreApi } from "../api/score";
@@ -124,6 +136,23 @@ const chessBoardHeight = ref(82.5);
 const musicUrl =
   "https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/%E5%8D%A1%E5%86%9C.mp3";
 
+let isPlaying = ref(false);
+let audio = ref(null);
+/**
+ * 点击播放音乐
+ */
+function onPlay() {
+  if (isPlaying.value) {
+    audio.value.pause();
+  } else {
+    if (audio.value === null || audio.value === undefined) {
+      audio.value = new Audio(musicUrl);
+    }
+    audio.value.play();
+  }
+  isPlaying.value = !isPlaying.value;
+}
+
 /**
  * el-radio 阻止上下左右切换
  */
@@ -137,6 +166,17 @@ function handleKeydown(event) {
   ) {
     event.preventDefault();
   }
+}
+
+function showAuthor() {
+  ElNotification({
+    title: "开发者：云胡",
+    message: h(
+      "b",
+      { style: "color: balck" },
+      "如有使用问题, 请微信联系: pan703019048"
+    ),
+  });
 }
 
 /**
@@ -224,50 +264,50 @@ const themeList = reactive([
   {
     themeName: "琥珀黄",
     customBackgroundColor: {
-      2: "#dcdcdc",
-      4: "#d8d8d8",
-      8: "#d4d4d4",
-      16: "#d0d0d0",
-      32: "#c0c0c0",
-      64: "#b0b0b0",
-      128: "#a0a0a0",
-      256: "#909090",
-      512: "#808080",
-      1024: "#707070",
-      2048: "#606060",
-      4096: "#505050",
-      8192: "#404040",
-      16384: "#303030",
+      2: "#fce89f",
+      4: "#fae77e",
+      8: "#f6d548",
+      16: "#f3c043",
+      32: "#f1b96e",
+      64: "#f2ae3f",
+      128: "#f29c37",
+      256: "#ee8834",
+      512: "#ee8b3e",
+      1024: "#ee8e49",
+      2048: "#ee9164",
+      4096: "#ee946e",
+      8192: "#ee9779",
+      16384: "#ee9a83",
       32768: "#202020",
       65536: "#000000",
     },
-    customFontColor: "#fffcff",
-    customGridContainerBackgroundColor: "#b6b6b6",
-    customGridCellBackgroundColor: "#afafaf",
+    customFontColor: "#ffffff",
+    customGridContainerBackgroundColor: "#dccbc3",
+    customGridCellBackgroundColor: "#d3c4a5",
   },
   {
     themeName: "梦幻粉",
     customBackgroundColor: {
-      2: "#dcdcdc",
-      4: "#d8d8d8",
-      8: "#d4d4d4",
-      16: "#d0d0d0",
-      32: "#c0c0c0",
-      64: "#b0b0b0",
-      128: "#a0a0a0",
-      256: "#909090",
-      512: "#808080",
-      1024: "#707070",
-      2048: "#606060",
-      4096: "#505050",
-      8192: "#404040",
-      16384: "#303030",
+      2: "#f5b9c5",
+      4: "#e493b1",
+      8: "#ed8095",
+      16: "#eb68ac",
+      32: "#d25189",
+      64: "#d24f6e",
+      128: "#ea4259",
+      256: "#b6204c",
+      512: "#b63662",
+      1024: "#b64c78",
+      2048: "#b6628e",
+      4096: "#b678a4",
+      8192: "#b68eba",
+      16384: "#b6a4d0",
       32768: "#202020",
       65536: "#000000",
     },
-    customFontColor: "#fffcff",
-    customGridContainerBackgroundColor: "#b6b6b6",
-    customGridCellBackgroundColor: "#afafaf",
+    customFontColor: "#ffffff",
+    customGridContainerBackgroundColor: "#f8d6ef",
+    customGridCellBackgroundColor: "#efcfe7",
   },
 ]);
 // 自定义棋盘的背景颜色
@@ -288,10 +328,8 @@ const selectTheme = (value) => {
   } else if (value === "风信紫") {
     currentSelectThemeStyle.value = themeList[2];
   } else if (value === "琥珀黄") {
-    ElMessage.error("云胡写不动代码了, 暂时和青灰一样");
     currentSelectThemeStyle.value = themeList[3];
   } else if (value === "梦幻粉") {
-    ElMessage.error("云胡写不动代码了, 暂时和青灰一样");
     currentSelectThemeStyle.value = themeList[4];
   }
   updateBoardView();
@@ -349,6 +387,9 @@ function touchend() {
  * 点击跳转到查看排行榜页面
  */
 function showScoreRank() {
+  audio.value.pause();
+  // audio.value = null;
+  isPlaying.value = false;
   router.push({
     path: "/scoreRank",
   });
@@ -412,10 +453,16 @@ const shouldShowCell = (rowIndex, columnIndex) => {
   return chessBoard[rowIndex][columnIndex] > 0;
 };
 
+/**
+ * 获取与顶部的位置
+ */
 function getPosTop(i, j) {
   return 10 + i * 100;
 }
 
+/**
+ * 获取与左侧的位置
+ */
 function getPosLeft(i, j) {
   return 10 + j * 100;
 }
@@ -1121,5 +1168,26 @@ header p {
 
 .music-class {
   margin: 20px;
+}
+
+.music-icon-class {
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+}
+
+.menu-class {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.about-author-class {
+  margin-top: 60px;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
 }
 </style>
