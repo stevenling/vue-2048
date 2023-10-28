@@ -24,3 +24,13 @@ export function getScoreRankApi(data) {
         data: data
     })
 }
+
+/**
+ * 获取句子
+ */
+export function getSentenceApi() {
+    return requestService({
+        url: '/app/sentence/get',
+        method: 'get',
+    })
+}
