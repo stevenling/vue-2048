@@ -1,14 +1,14 @@
-import { createApp } from "vue";
-import "./style.css";
-import App from "./App.vue";
-import ElementPlus from "element-plus";
-import "element-plus/dist/index.css";
-import router from "./router";
-import "lib-flexible";
-import Vue3DraggableResizable from "vue3-draggable-resizable";
-import "vue3-draggable-resizable/dist/Vue3DraggableResizable.css";
-import * as ElementPlusIconsVue from "@element-plus/icons-vue";
-import { createPinia } from "pinia";
+import { createApp } from 'vue';
+import './style.css';
+import App from './App.vue';
+import ElementPlus from 'element-plus';
+import 'element-plus/dist/index.css';
+import router from './router';
+import 'lib-flexible';
+import Vue3DraggableResizable from 'vue3-draggable-resizable';
+import 'vue3-draggable-resizable/dist/Vue3DraggableResizable.css';
+import * as ElementPlusIconsVue from '@element-plus/icons-vue';
+import { createPinia } from 'pinia';
 
 const app = createApp(App);
 
@@ -19,4 +19,4 @@ app.use(ElementPlus);
 app.use(router);
 app.use(Vue3DraggableResizable);
 app.use(createPinia());
-app.mount("#app");
+app.mount('#app');

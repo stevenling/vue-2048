@@ -5,8 +5,7 @@
         v-for="(cell, columnIndex) in row"
         :key="rowIndex + columnIndex"
         class="grid-cell"
-        :id="'grid-cell-' + rowIndex + '-' + columnIndex"
-      ></div>
+        :id="'grid-cell-' + rowIndex + '-' + columnIndex"></div>
     </div>
 
     <div v-for="(row, rowIndex) in chessBoard" :key="rowIndex">
@@ -15,8 +14,7 @@
           class="number-cell"
           :id="'number-cell-' + rowIndex + '-' + columnIndex"
           v-show="shouldShowCell(rowIndex, columnIndex)"
-          v-text="cell"
-        ></span>
+          v-text="cell"></span>
       </div>
     </div>
   </div>

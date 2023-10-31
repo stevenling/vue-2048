@@ -102,6 +102,9 @@
   import Vue3DraggableResizable from 'vue3-draggable-resizable';
   import 'vue3-draggable-resizable/dist/Vue3DraggableResizable.css';
 
+  import { useCounterStore } from '../store/user';
+  import { getLocalStorageData } from '../store/user';
+
   const defaultTheme = ref('默认');
 
   // 初始化格子内容
@@ -329,15 +332,32 @@
   };
 
   onMounted(() => {
-    // getSentenceApi()
-    //   .then((res) => {
-    //     console.log(res);
-    //   })
-    //   .catch((error) => {});
+    // 从 localstore 里面读取数据
+    const counterStore = useCounterStore();
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 4; j++) {
+        chessBoard[i][j] = counterStore.chessBoardArray[i][j];
+      }
+    }
+    let flag = 0;
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 4; j++) {
+        if (chessBoard[i][j] != 0) {
+          document.addEventListener('keyup', processKeyUp);
+          flag = 1;
+          break;
+        }
+      }
+      if (flag === 1) {
+        break;
+      }
+    }
 
     // 初始化棋盘格;
     initChessboard();
-    useTime.value = 0;
+    useTime.value = counterStore.localStorageTime;
+    score.value = counterStore.localStorageScore;
+    timer.value = setInterval(() => useTime.value++, 1000);
   });
 
   let startX = ref();
@@ -356,7 +376,7 @@
   function touchmove() {}
 
   function touchend() {
-    event.preventDefault();
+    // event.preventDefault();
 
     let moveEndX = event.changedTouches[0].pageX;
     let moveEndY = event.changedTouches[0].pageY;
@@ -640,6 +660,36 @@
     return true;
   }
 
+  const storeChessBoard = () => {
+    const counterStore = useCounterStore();
+
+    // 调用 Store 中的 setCellValue 方法
+    for (let rowIndex = 0; rowIndex < 4; rowIndex++) {
+      for (let columnIndex = 0; columnIndex < 4; columnIndex++) {
+        counterStore.setCellValue(
+          rowIndex,
+          columnIndex,
+          chessBoard[rowIndex][columnIndex]
+        );
+      }
+    }
+    counterStore.setLocalStorageScoreValue(score.value);
+    counterStore.setLocalStorageTimeValue(useTime.value);
+  };
+
+  const gameOverStoreChessBoard = () => {
+    const counterStore = useCounterStore();
+
+    // 调用 Store 中的 setCellValue 方法
+    for (let rowIndex = 0; rowIndex < 4; rowIndex++) {
+      for (let columnIndex = 0; columnIndex < 4; columnIndex++) {
+        counterStore.setCellValue(rowIndex, columnIndex, 0);
+      }
+    }
+    counterStore.setLocalStorageScoreValue(0);
+    counterStore.setLocalStorageTimeValue(0);
+  };
+
   /**
    * 往上移动
    */
@@ -741,6 +791,7 @@
 
     setTimeout(() => {
       generateOneNumber();
+      storeChessBoard();
     }, 160);
 
     setTimeout(() => {
@@ -950,7 +1001,6 @@
    */
   function initChessboard() {
     updateBoardView();
-    score.value = 0;
   }
 
   /**
@@ -1054,6 +1104,7 @@
       centerDialogVisible.value = true;
       clearInterval(timer.value);
       document.removeEventListener('keyup', processKeyUp);
+      gameOverStoreChessBoard();
     }
   }
 
