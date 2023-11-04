@@ -10,6 +10,13 @@
           v-if="isPlaying"
           :src="musicUrl"
           @click="onPlay" />
+        <el-tooltip
+          class="box-item"
+          content="随机一首"
+          placement="top-start"
+          v-if="isPlaying">
+          <ArrowRight class="music-icon-class" @click="onSwitchMusic" />
+        </el-tooltip>
         <MuteNotification
           class="music-icon-class"
           v-else-if="!isPlaying"
@@ -125,12 +132,25 @@
   // 用时
   let useTime = ref(0);
   // 棋盘宽高
-  const chessBoardWidth = ref(82.5);
-  const chessBoardHeight = ref(82.5);
+  const chessBoardWidth = ref(80);
+  const chessBoardHeight = ref(80);
 
   // 本地音乐
   const musicUrl =
     'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/%E5%8D%A1%E5%86%9C.mp3';
+
+  const musicUrlList = [
+    'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/Here%20We%20Are%20Again.mp3',
+    'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/MELANCHOLY.mp3',
+    'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/Nomak%20-%20Moon%20Flow.mp3',
+    'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/Snigellin%20-%20Sakura%20Tears.mp3',
+    'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/%E4%BD%90%E8%97%A4%E5%BA%B7%E5%A4%AB%20-%20%E5%A4%9C%E6%98%8E.mp3',
+    'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/%E5%8D%A1%E5%86%9C.mp3',
+    'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/%E5%9F%8E%E5%8D%97%E8%8A%B1%E5%B7%B2%E5%BC%80-%E4%B8%89%E4%BA%A9%E5%9C%B0.mp3',
+    'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/%E5%BC%A0%E5%AE%87%E6%A1%A6%20-%20%E4%BC%98%E7%BE%8E%E7%9A%84%E5%B0%8F%E8%B0%83.mp3',
+    'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/%E5%A4%8F%E6%81%8B.mp3',
+    'https://book-1253628880.cos.ap-nanjing.myqcloud.com/music/Summer.mp3',
+  ];
 
   let isPlaying = ref(false);
   let audio = ref(null);
@@ -148,6 +168,28 @@
     }
     isPlaying.value = !isPlaying.value;
   }
+
+  /**
+   * 随机一首
+   */
+  const onSwitchMusic = () => {
+    let randomIndex = Math.floor(Math.random() * musicUrlList.length);
+    let currentMusicUrl = musicUrlList[randomIndex];
+    audio.value.pause();
+
+    let frontMusic = audio.value.src;
+    while (currentMusicUrl === frontMusic) {
+      randomIndex = Math.floor(Math.random() * musicUrlList.length);
+      currentMusicUrl = musicUrlList[randomIndex];
+    }
+
+    // 更改音频源
+    audio.value.src = currentMusicUrl;
+    // 重新加载新的音频
+    audio.value.load();
+    // 播放新歌曲
+    audio.value.play();
+  };
 
   /**
    * el-radio 阻止上下左右切换
@@ -314,7 +356,7 @@
   /**
    * 选择主题
    */
-  let currentTheme = ref('默认');
+  let currentTheme = ref('');
   const selectTheme = (value) => {
     currentTheme.value = value;
     if (value === '默认') {
@@ -328,10 +370,16 @@
     } else if (value === '梦幻粉') {
       currentSelectThemeStyle.value = themeList[4];
     }
+    // 保存主题配置到本地
+    const counterStore = useCounterStore();
+    counterStore.setLocalStorageThemeValue(value);
     updateBoardView();
   };
 
-  onMounted(() => {
+  /**
+   * 加载本地数据
+   */
+  const loadLocalStore = () => {
     // 从 localstore 里面读取数据
     const counterStore = useCounterStore();
     for (let i = 0; i < 4; i++) {
@@ -352,9 +400,26 @@
         break;
       }
     }
+    defaultTheme.value = counterStore.localStorageTheme;
+    currentTheme.value = counterStore.localStorageTheme;
+    if (currentTheme.value === '默认') {
+      currentSelectThemeStyle.value = themeList[0];
+    } else if (currentTheme.value === '青灰') {
+      currentSelectThemeStyle.value = themeList[1];
+    } else if (currentTheme.value === '风信紫') {
+      currentSelectThemeStyle.value = themeList[2];
+    } else if (currentTheme.value === '琥珀黄') {
+      currentSelectThemeStyle.value = themeList[3];
+    } else if (currentTheme.value === '梦幻粉') {
+      currentSelectThemeStyle.value = themeList[4];
+    }
+  };
 
+  onMounted(() => {
+    loadLocalStore();
     // 初始化棋盘格;
     initChessboard();
+    const counterStore = useCounterStore();
     useTime.value = counterStore.localStorageTime;
     score.value = counterStore.localStorageScore;
     timer.value = setInterval(() => useTime.value++, 1000);
@@ -477,14 +542,14 @@
    * 获取与顶部的位置
    */
   function getPosTop(i, j) {
-    return 10 + i * 100;
+    return 6 + i * 92;
   }
 
   /**
    * 获取与左侧的位置
    */
   function getPosLeft(i, j) {
-    return 10 + j * 100;
+    return 6 + j * 92;
   }
 
   /**
@@ -549,7 +614,6 @@
     let numberCell = document.getElementById(
       'number-cell-' + fromX + '-' + fromY
     );
-
     // 200ms 动画效果不好
     // 50 ms 好
     if (numberCell) {
@@ -561,6 +625,17 @@
         50
       );
     }
+    // 使用CSS过渡动画
+    // numberCell.style.transition = 'top 10s, left 10s';
+    // // 设置元素的新位置
+    // numberCell.style.top = getPosTop(toX, toY) + 'px';
+    // numberCell.style.left = getPosLeft(toX, toY) + 'px';
+    // if (numberCell) {
+    //   numberCell.style.transition = 'top 0.2s, left 0.2s'; // 同时设置淡入淡出和位置移动的过渡动画
+    //   // 同时设置元素的新位置
+    //   numberCell.style.top = getPosTop(toX, toY) + 'px';
+    //   numberCell.style.left = getPosLeft(toX, toY) + 'px';
+    // }
   }
 
   /**
@@ -924,6 +999,32 @@
     return true;
   }
 
+  // 创建淡出效果
+  function fadeOut(element, i, j) {
+    let opacity = 1;
+    const fadeInterval = setInterval(function () {
+      if (opacity <= 0) {
+        // 淡出完成，清除定时器并隐藏元素
+        clearInterval(fadeInterval);
+        element.style.display = 'none';
+        // element.style.width = '0px';
+        // element.style.height = '0px';
+        // element.style.width = '0px';
+        // element.style.height = '0px';
+        // element.style.top = getPosTop(i, j) + 'px';
+        // element.style.left = getPosLeft(i, j) + 'px';
+        // element.style.backgroundColor = getNumberBackgroundColor(
+        //   chessBoard[i][j]
+        // );
+        // element.style.color = getNumberColor(chessBoard[i][j]);
+      } else {
+        // 逐渐减小透明度
+        opacity -= 0.5; // 调整步长以控制淡出速度
+        element.style.opacity = opacity;
+      }
+    }, 100); // 每100毫秒执行一次
+  }
+
   /**
    * 重绘界面
    */
@@ -958,6 +1059,8 @@
           );
           theNumberCell.style.color = getNumberColor(chessBoard[i][j]);
         } else if (chessBoard[i][j] === 0 && theNumberCell) {
+          // fadeOut(theNumberCell, i, j);
+
           theNumberCell.style.width = '0px';
           theNumberCell.style.height = '0px';
           theNumberCell.style.top = getPosTop(i, j) + 'px';
@@ -1191,27 +1294,27 @@
   }
 
   #grid-container {
-    width: 360px;
-    height: 360px;
-    padding: 20px;
-    margin: 15px auto;
+    width: 368px;
+    height: 368px;
+    /* padding: 20px; */
+    margin: 10px auto;
     border-radius: 10px;
     position: relative;
   }
 
   .grid-cell {
-    width: 82.5px;
-    height: 82.5px;
+    width: 80px;
+    height: 80px;
     border-radius: 6px;
     position: absolute;
   }
 
   .number-cell {
-    font-weight: bold;
+    /* font-weight: bold; */
     font-family: Arial;
     border-radius: 6px;
     font-size: 60px;
-    line-height: 82.5px;
+    line-height: 80px;
     text-align: center;
     position: absolute;
   }

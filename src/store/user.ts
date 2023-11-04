@@ -30,6 +30,11 @@ const getLocalStorageTime = () => {
   return data ? JSON.parse(data) : 0;
 };
 
+const getLocalStorageTheme = () => {
+  const theme = localStorage.getItem('localStorageTheme');
+  return theme ? JSON.parse(theme) : '默认';
+};
+
 /**
  * 保存棋盘上的值
  * @param data
@@ -54,12 +59,21 @@ const setLocalStorageTime = (data: number) => {
   localStorage.setItem('localStorageTime', JSON.stringify(data));
 };
 
+/**
+ * 设置主题
+ * @param data
+ */
+const setLocalStorageTheme = (theme: string) => {
+  localStorage.setItem('localStorageTheme', JSON.stringify(theme));
+};
+
 export const useCounterStore = defineStore({
   id: 'counter',
   state: () => ({
     chessBoardArray: ref(getLocalStorageData()),
     localStorageScore: ref(getLocalStorageScore()),
     localStorageTime: ref(getLocalStorageTime()),
+    localStorageTheme: ref(getLocalStorageTheme()),
   }),
   actions: {
     setCellValue(row: number, col: number, value: number) {
@@ -77,6 +91,11 @@ export const useCounterStore = defineStore({
     setLocalStorageTimeValue(time: number) {
       this.localStorageTime = time;
       setLocalStorageTime(time);
+    },
+
+    setLocalStorageThemeValue(theme: string) {
+      this.localStorageTheme = theme;
+      setLocalStorageTheme(theme);
     },
   },
 });
