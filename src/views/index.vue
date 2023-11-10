@@ -5,11 +5,14 @@
       <div class="menu-class">
         <el-button type="primary" @click="startNewGame">开始新游戏</el-button>
         <el-button color="#626aef" @click="showScoreRank">查看排行榜</el-button>
-        <Service
-          class="music-icon-class"
-          v-if="isPlaying"
-          :src="musicUrl"
-          @click="onPlay" />
+        <el-tooltip
+          class="box-item"
+          content="暂停"
+          placement="top-start"
+          v-if="isPlaying">
+          <Service class="music-icon-class" :src="musicUrl" @click="onPlay" />
+        </el-tooltip>
+
         <el-tooltip
           class="box-item"
           content="随机一首"
@@ -17,11 +20,16 @@
           v-if="isPlaying">
           <ArrowRight class="music-icon-class" @click="onSwitchMusic" />
         </el-tooltip>
-        <MuteNotification
-          class="music-icon-class"
+        <el-tooltip
+          class="box-item"
+          content="播放"
           v-else-if="!isPlaying"
-          :src="musicUrl"
-          @click="onPlay" />
+          placement="top-start">
+          <MuteNotification
+            class="music-icon-class"
+            :src="musicUrl"
+            @click="onPlay" />
+        </el-tooltip>
       </div>
 
       <el-radio-group v-model="defaultTheme" size="small" @change="selectTheme">
@@ -165,9 +173,14 @@
         audio.value = new Audio(musicUrl);
       }
       audio.value.play();
+      audio.value.addEventListener('ended', playNext);
     }
     isPlaying.value = !isPlaying.value;
   }
+
+  const playNext = () => {
+    onSwitchMusic();
+  };
 
   /**
    * 随机一首
@@ -189,6 +202,7 @@
     audio.value.load();
     // 播放新歌曲
     audio.value.play();
+    audio.value.addEventListener('ended', playNext);
   };
 
   /**
